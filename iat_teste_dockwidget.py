@@ -24,6 +24,7 @@
 
 import os
 
+from qgis.core import QgsFeatureRequest
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 
@@ -31,13 +32,13 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'iat_teste_dockwidget_base.ui'))
 
 
-class IatTesteDockWidgetBase(QtWidgets.QDockWidget, FORM_CLASS):
+class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
     def __init__(self, parent=None):
         """Constructor."""
-        super(IatTesteDockWidgetBase, self).__init__(parent)
+        super(IatTesteDockWidget, self).__init__(parent)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
@@ -45,18 +46,50 @@ class IatTesteDockWidgetBase(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
-        self.btn_executar.clicked.connect(self.executar_analise)
+        self.btn_exec.clicked.connect(self.executar_analise)
 
-        def executar_analise(self):
-            texto_pesquisa = self.valor_pesq.text()
-            tipo_filtro = self.sel_campo.currentText()
+    def executar_analise(self):
+        texto_pesquisa = self.valor_pesq.text().strip()
+        tipo_filtro = self.sel_campo.currentText()
+        camada = self.sel_camada.currentLayer()
 
-            if tipo_filtro in ["CPF/CNPJ","Protocolo"]:
+        if not camada:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Selecione uma camada válida.")
+            return
+        if not texto_pesquisa:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Digite um valor para pesquisa.")
+            return
+
+        if tipo_filtro in ["CPF/CNPJ","Protocolo"]:
                 texto_limpo = texto_pesquisa.replace(".", "").replace("-", "").replace("/", "")
-            else:
+        else:
                 texto_limpo = texto_pesquisa
 
-            print(f"Sucesso! Buscando por {texto_limpo} no campo {tipo_filtro}.")
+        campo_selecionado = ""
+        if tipo_filtro == "CPF/CNPJ":
+            campo_selecionado = "nr_cpf_cnpj"
+        elif tipo_filtro == "Protocolo":
+            campo_selecionado = "nr_e_protocolo"
+        elif tipo_filtro == "Nome":
+            campo_selecionado = "nm_requerente"
+        elif tipo_filtro == "Portaria":
+            campo_selecionado = "nr_portaria"
+
+        expressao = f"\"{campo_selecionado}\" ILIKE '%{texto_limpo}%'"
+        print(f"Expressão de filtro: {expressao}")
+
+        request = QgsFeatureRequest().setFilterExpression(expressao)
+        features = camada.getFeatures(request)
+
+        encontrou_resultados = False
+        for feature in features:
+            encontrou_resultados = True
+            atributos = feature.attributes()
+
+            print(f"ID da feição: {feature.id()} | Dados: {atributos}")
+
+        if not encontrou_resultados:
+            QtWidgets.QMessageBox.information(self, "Resultados", "Nenhum resultado encontrado.")
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
