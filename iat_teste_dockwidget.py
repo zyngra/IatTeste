@@ -45,6 +45,19 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        self.btn_executar.clicked.connect(self.executar_analise)
+
+        def executar_analise(self):
+            texto_pesquisa = self.valor_pesq.text()
+            tipo_filtro = self.sel_campo.currentText()
+
+            if tipo_filtro in ["CPF/CNPJ","Protocolo"]:
+                texto_limpo = texto_pesquisa.replace(".", "").replace("-", "").replace("/", "")
+            else:
+                texto_limpo = texto_pesquisa
+
+            print(f"Sucesso! Buscando por {texto_limpo} no campo {tipo_filtro}.")
+            
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
