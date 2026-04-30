@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>232</width>
-    <height>141</height>
+    <width>520</width>
+    <height>467</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,17 +16,54 @@
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Replace this QLabel
-with the desired
-plugin content.</string>
+     <widget class="QgsMapLayerComboBox" name="sel_camada">
+      <property name="editable">
+       <bool>true</bool>
       </property>
      </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QComboBox" name="sel_campo">
+      <item>
+       <property name="text">
+        <string>Protocolo</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Nome</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>CPF/CNPJ</string>
+       </property>
+      </item>
+     </widget>
+    </item>
+    <item row="2" column="1">
+     <widget class="QPushButton" name="btn_exec">
+      <property name="text">
+       <string>Pesquisar</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0">
+     <widget class="QLineEdit" name="valor_pesq"/>
+    </item>
+    <item row="3" column="0">
+     <widget class="QTableWidget" name="tabela"/>
     </item>
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QgsMapLayerComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qgsmaplayercombobox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
