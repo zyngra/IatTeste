@@ -28,6 +28,7 @@ from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.utils import iface
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'iat_teste_dockwidget_base.ui'))
@@ -47,9 +48,18 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        self.btn_exec.setDefault(True)
+
         self.sel_camada.setFilters(QgsMapLayerProxyModel.VectorLayer)
 
         self.btn_exec.clicked.connect(self.executar_analise)
+        self.valor_pesq.returnPressed.connect(self.executar_analise)
+
+        self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.tabela.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tabela.setColumnHidden(0, True)
+        self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
     def executar_analise(self):
         texto_pesquisa = self.valor_pesq.text().strip()
@@ -93,7 +103,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         header = self.tabela.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.setSectionResizeMode(2, QHeaderView.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
 
         self.tabela.setRowCount(0)
@@ -119,6 +129,28 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         if not encontrou_resultados:
             QtWidgets.QMessageBox.information(self, "Resultados", "Nenhum resultado encontrado.")
+
+    def zoom_pto(self, linha, coluna):
+        camada = self.sel_camada.currentLayer()
+        if not camada:
+            return
+        
+        id_item = self.tabela.item(linha, 0)
+        if not id_item:
+            return
+
+        id_feature = int(id_item.text())
+
+        camada.removeSelection()
+        camada.selectByIds([id_feature])
+        iface.mapCanvas().zoomToSelected(camada)
+
+        escala_escolhida = 2500
+
+        if iface.mapCanvas().scale() < escala_escolhida:
+            iface.mapCanvas().zoomScale(escala_escolhida)
+
+        iface.mapCanvas().flashFeatureIds(camada, [id_feature], duration=1000)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
