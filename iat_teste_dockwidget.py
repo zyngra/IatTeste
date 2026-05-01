@@ -24,8 +24,9 @@
 
 import os
 
-from qgis.core import QgsFeatureRequest
+from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType
 from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -46,6 +47,8 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        self.sel_camada.setFilters(QgsMapLayerProxyModel.VectorLayer)
+
         self.btn_exec.clicked.connect(self.executar_analise)
 
     def executar_analise(self):
@@ -55,6 +58,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         if not camada:
             QtWidgets.QMessageBox.warning(self, "Erro", "Selecione uma camada válida.")
+            return
+        if camada.type() != QgsMapLayerType.VectorLayer:
+            QtWidgets.QMessageBox.warning(self, "Erro", "A camada selecionada deve ser do tipo pontos ou vetor.")
             return
         if not texto_pesquisa:
             QtWidgets.QMessageBox.warning(self, "Erro", "Digite um valor para pesquisa.")
@@ -81,12 +87,35 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         request = QgsFeatureRequest().setFilterExpression(expressao)
         features = camada.getFeatures(request)
 
+        self.tabela.setColumnCount(4)
+        self.tabela.setHorizontalHeaderLabels(["ID", "Protocolo", "Nome", "Portaria"])
+
+        header = self.tabela.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.Interactive)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        self.tabela.setRowCount(0)
+        linha = 0
+
         encontrou_resultados = False
+
         for feature in features:
             encontrou_resultados = True
-            atributos = feature.attributes()
+            id_feature = str(feature.id())
 
-            print(f"ID da feição: {feature.id()} | Dados: {atributos}")
+            val_protocolo = str(feature["nr_e_protocolo"])
+            val_nome = str(feature["nm_requerente"])
+            val_portaria = str(feature["nr_portaria"])
+
+            self.tabela.insertRow(linha)
+            self.tabela.setItem(linha, 0, QTableWidgetItem(id_feature))
+            self.tabela.setItem(linha, 1, QTableWidgetItem(val_protocolo))
+            self.tabela.setItem(linha, 2, QTableWidgetItem(val_nome))
+            self.tabela.setItem(linha, 3, QTableWidgetItem(val_portaria))
+
+            linha += 1
 
         if not encontrou_resultados:
             QtWidgets.QMessageBox.information(self, "Resultados", "Nenhum resultado encontrado.")
