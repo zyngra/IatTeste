@@ -97,14 +97,15 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         request = QgsFeatureRequest().setFilterExpression(expressao)
         features = camada.getFeatures(request)
 
-        self.tabela.setColumnCount(4)
-        self.tabela.setHorizontalHeaderLabels(["ID", "Protocolo", "Nome", "Portaria"])
+        self.tabela.setColumnCount(5)
+        self.tabela.setHorizontalHeaderLabels(["ID", "CPF/CNPJ", "Protocolo", "Nome", "Portaria"])
 
         header = self.tabela.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.Interactive)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.Interactive)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
 
         self.tabela.setRowCount(0)
         linha = 0
