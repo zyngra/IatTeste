@@ -116,15 +116,17 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             encontrou_resultados = True
             id_feature = str(feature.id())
 
+            val_cpf_cnpj = str(feature["nr_cpf_cnpj"])
             val_protocolo = str(feature["nr_e_protocolo"])
             val_nome = str(feature["nm_requerente"])
             val_portaria = str(feature["nr_portaria"])
 
             self.tabela.insertRow(linha)
             self.tabela.setItem(linha, 0, QTableWidgetItem(id_feature))
-            self.tabela.setItem(linha, 1, QTableWidgetItem(val_protocolo))
-            self.tabela.setItem(linha, 2, QTableWidgetItem(val_nome))
-            self.tabela.setItem(linha, 3, QTableWidgetItem(val_portaria))
+            self.tabela.setItem(linha, 1, QTableWidgetItem(val_cpf_cnpj))
+            self.tabela.setItem(linha, 2, QTableWidgetItem(val_protocolo))
+            self.tabela.setItem(linha, 3, QTableWidgetItem(val_nome))
+            self.tabela.setItem(linha, 4, QTableWidgetItem(val_portaria))
 
             linha += 1
 
