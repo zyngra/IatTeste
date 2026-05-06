@@ -6,58 +6,89 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>520</width>
-    <height>467</height>
+    <width>756</width>
+    <height>481</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>IatTeste</string>
+   <string>Análise</string>
   </property>
   <widget class="QWidget" name="dockWidgetContents">
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0">
-     <widget class="QgsMapLayerComboBox" name="sel_camada">
-      <property name="editable">
-       <bool>true</bool>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="currentIndex">
+       <number>1</number>
       </property>
+      <widget class="QWidget" name="tab_3">
+       <attribute name="title">
+        <string>Consulta Rápida</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="1" column="0" colspan="2">
+         <widget class="QComboBox" name="sel_campo">
+          <item>
+           <property name="text">
+            <string>Protocolo</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Nome</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>CPF/CNPJ</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Portaria</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item row="4" column="0" colspan="2">
+         <widget class="QTableWidget" name="tabela"/>
+        </item>
+        <item row="2" column="1">
+         <widget class="QPushButton" name="btn_exec">
+          <property name="text">
+           <string>Pesquisar</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0" colspan="2">
+         <widget class="QgsMapLayerComboBox" name="sel_camada">
+          <property name="editable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="0">
+         <widget class="QLineEdit" name="valor_pesq"/>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_4">
+       <attribute name="title">
+        <string>Análise de Montante (experimental)</string>
+       </attribute>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="0">
+         <widget class="QgsMapLayerComboBox" name="sel_camada_rio"/>
+        </item>
+        <item row="0" column="1">
+         <widget class="QPushButton" name="btn_sel_rio">
+          <property name="text">
+           <string>Clique para selecionar o curso hídrico</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
      </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QComboBox" name="sel_campo">
-      <item>
-       <property name="text">
-        <string>Protocolo</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Nome</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>CPF/CNPJ</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Portaria</string>
-       </property>
-      </item>
-     </widget>
-    </item>
-    <item row="2" column="1">
-     <widget class="QPushButton" name="btn_exec">
-      <property name="text">
-       <string>Pesquisar</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0">
-     <widget class="QLineEdit" name="valor_pesq"/>
-    </item>
-    <item row="3" column="0">
-     <widget class="QTableWidget" name="tabela"/>
     </item>
    </layout>
   </widget>
