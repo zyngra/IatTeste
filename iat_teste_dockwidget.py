@@ -24,7 +24,7 @@
 
 import os
 
-from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType
+from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
@@ -48,24 +48,56 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        # Não mexa em qualquer coisa acima deste ponto, a menos que saiba exatamente o que está fazendo!
+        # O código acima foi gerado automaticamente e é responsável por configurar a interface gráfica e as demais funções. 
+
         self.btn_exec.setDefault(True)
 
-        self.sel_camada.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        # self.sel_camada.setFilters(QgsMapLayerProxyModel.VectorLayer)
 
         self.btn_exec.clicked.connect(self.executar_analise)
         self.valor_pesq.returnPressed.connect(self.executar_analise)
 
+        # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.tabela.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tabela.setColumnHidden(0, True)
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
+        # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
+        self.filtrar_camadas_campo("nr_e_protocolo")
+
+        QgsProject.instance().layersAdded.connect(lambda: self.filtrar_camadas_campo("nr_e_protocolo"))
+
+    # Função que filtra as camadas disponíveis, mostrando apenas aquelas relevantes
+    def filtrar_camadas_campo(self, nome_campo):
+
+        camadas_para_filtrar = []
+
+        todas_camadas = QgsProject.instance().mapLayers().values()
+
+        # Itera sobre todas as camadas do projeto e verifica se são do tipo vetor e se possuem o campo específico. Se não atenderem a esses critérios, são adicionadas à lista de camadas a serem filtradas.
+        for camada in todas_camadas:
+            if camada.type() != QgsMapLayerType.VectorLayer:
+                camadas_para_filtrar.append(camada)
+                continue
+            if camada.fields().indexOf(nome_campo) == -1:
+                camadas_para_filtrar.append(camada)
+
+        # Envia a lista de camadas a serem filtradas para o widget de seleção de camadas, que irá ocultá-las da lista de opções disponíveis para o usuário.
+        self.sel_camada.setExceptedLayerList(camadas_para_filtrar)
+
+
+    # Componente principal do widget, onde ocorre a lógica de análise dos dados. Ele verifica se a camada selecionada é válida, constrói uma expressão de filtro com base no tipo de pesquisa escolhida e no valor digitado, e então executa a consulta na camada para obter os resultados correspondentes. Os resultados são exibidos em uma tabela, e o usuário pode clicar duas vezes em um resultado para dar zoom no ponto correspondente no mapa.
     def executar_analise(self):
+
+        # Recebe os dados dos campos preenchidos e selecionados. O valor da pesquisa é limpo de caracteres especiais caso seja do tipo CPF/CNPJ ou Protocolo, para garantir que a consulta seja feita de forma correta, independentemente do formato em que o usuário tenha digitado o valor.
         texto_pesquisa = self.valor_pesq.text().strip()
         tipo_filtro = self.sel_campo.currentText()
         camada = self.sel_camada.currentLayer()
 
+        # Erros. O sistema verifica se a camada selecionada é válida, se é do tipo vetor, e se o valor de pesquisa foi preenchido. Se alguma dessas condições não for atendida, uma mensagem de aviso é exibida para o usuário, indicando o problema específico.
         if not camada:
             QtWidgets.QMessageBox.warning(self, "Erro", "Selecione uma camada válida.")
             return
@@ -76,11 +108,15 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QtWidgets.QMessageBox.warning(self, "Erro", "Digite um valor para pesquisa.")
             return
 
+        # Realiza a limpeza do valor de pesquisa, removendo caracteres especiais como pontos, traços e barras, caso o tipo de filtro seja CPF/CNPJ ou Protocolo.
+        # A base de dados possui valores sem esses caracteres especiais, então a pesquisa é feita sem eles.
         if tipo_filtro in ["CPF/CNPJ","Protocolo"]:
                 texto_limpo = texto_pesquisa.replace(".", "").replace("-", "").replace("/", "")
         else:
                 texto_limpo = texto_pesquisa
 
+        # Lógica de seleção de campos. Associa os valores filtro a campos específicos que a base de dados possui.
+        # A intenção é que no futuro esses campos sejam personalizáveis, mas por ora são fixos para facilitar o uso e evitar erros de campos inexistentes.
         campo_selecionado = ""
         if tipo_filtro == "CPF/CNPJ":
             campo_selecionado = "nr_cpf_cnpj"
@@ -91,12 +127,17 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         elif tipo_filtro == "Portaria":
             campo_selecionado = "nr_portaria"
 
+        # Gera a expressão SQL para busca. O operador ILIKE existe para realizar uma busca que não diferencia maiúsculas de minúsculas, e os caracteres % são curingas que permitem encontrar o valor de pesquisa em qualquer parte do campo, facilitando a localização dos resultados mesmo que o usuário não saiba exatamente como o valor está formatado na base de dados.
         expressao = f"\"{campo_selecionado}\" ILIKE '%{texto_limpo}%'"
+
+        # Imprime a expressão no console, para depuração.
         print(f"Expressão de filtro: {expressao}")
 
+        # Executa a consulta na camada usando a expressão gerada.
         request = QgsFeatureRequest().setFilterExpression(expressao)
         features = camada.getFeatures(request)
 
+        # Construtores de tabela de resultados.
         self.tabela.setColumnCount(5)
         self.tabela.setHorizontalHeaderLabels(["ID", "CPF/CNPJ", "Protocolo", "Nome", "Portaria"])
 
@@ -112,6 +153,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         encontrou_resultados = False
 
+        # Para cada resultado encontrado, os dados são extraídos dos campos relevantes e inseridos na tabela de resultados. O ID da feição é mantido oculto na tabela, mas é utilizado para permitir que o usuário dê zoom no ponto correspondente no mapa ao clicar duas vezes em um resultado.
         for feature in features:
             encontrou_resultados = True
             id_feature = str(feature.id())
@@ -130,10 +172,14 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             linha += 1
 
+        # Mostra uma caixa de aviso caso o valor não tenha sido encontrado.
         if not encontrou_resultados:
             QtWidgets.QMessageBox.information(self, "Resultados", "Nenhum resultado encontrado.")
 
+    # Função que permite dar zoom no ponto correspondente no mapa ao clicar duas vezes em um resultado na tabela. Ela seleciona a feição correspondente na camada e ajusta a visualização do mapa para focar nela, além de destacar a feição por um breve período para facilitar sua localização.
     def zoom_pto(self, linha, coluna):
+
+        # Lógica de seleção.
         camada = self.sel_camada.currentLayer()
         if not camada:
             return
@@ -144,15 +190,22 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         id_feature = int(id_item.text())
 
+        # Esse bloco deseleciona qualquer seleção anterior, seleciona a feição escolhida e dá um zoom.
         camada.removeSelection()
         camada.selectByIds([id_feature])
         iface.mapCanvas().zoomToSelected(camada)
 
+        # A escala é definida aqui, originalmente de 1:2500. A intenção é que esse valor também seja personalizável.
+        # Testes apontaram que a escala de 1:2500 é suficiente para maioria dos casos, pois permite boa visualização dos arredores e não é tão próximo a ponto de dificultar a localização.
         escala_escolhida = 2500
 
+        # Reajusta a escala para 1:2500, independente da escala original.
         if iface.mapCanvas().scale() < escala_escolhida:
             iface.mapCanvas().zoomScale(escala_escolhida)
 
+        # Pisca a feição para facilitar sua localização, mesmo que o zoom já esteja centrado nela.
+        # A base de dados pode possuir vários pontos extremamente próximos, então o destaque visual é útil na hora de
+        # localizar a feição correta.
         iface.mapCanvas().flashFeatureIds(camada, [id_feature], duration=1000)
 
     def closeEvent(self, event):

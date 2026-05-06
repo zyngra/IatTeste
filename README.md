@@ -12,3 +12,4 @@ To-do:
 
 1. Permitir ao usuário selecionar os campos exibidos, através de leitura automatica das features do QGIS;
 2. Permitir personalização do widget;
+3. Permitir a análise automatizada de montante.
