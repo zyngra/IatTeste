@@ -160,8 +160,8 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         # Esconde a coluna de ID, que é utilizada apenas para lógica interna, e a camada de CPF/CNPJ se a base
         # de dados utilizada não a possuir.
-        header.setColumnHidden(0, True)
-        header.setColumnHidden(1, not has_cpf_cnpj)
+        self.tabela.setColumnHidden(0, True)
+        self.tabela.setColumnHidden(1, not has_cpf_cnpj)
 
         self.tabela.setRowCount(0)
         linha = 0
