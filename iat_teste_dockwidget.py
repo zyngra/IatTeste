@@ -64,6 +64,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # identificar a camada e extrair o ottocódigo manualmente, usando a ferramenta de seleção do QGIS.
         self.btn_sel_rio.clicked.connect(self.ativar_selecao_rio)
 
+        # Botão de análise montante. Ele conecta a função com a lógica de análise de montante, que está em
+        # estágios iniciais de implementação, mas a ideia é que ele utilize os códigos de rio e bacia para
+        # realizar a seleção automática das ottobacias a montante e o predicado geométrico de contenção
+        # para determinar os pontos outorgados e a vazão indisponível.
+        self.btn_exec_mont.clicked.connect(lambda: self.analise_montante(self.disp_cod_rio.text(), self.disp_cod_bacia.text()))
+
         # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
@@ -226,24 +232,43 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # localizar a feição correta.
         iface.mapCanvas().flashFeatureIds(camada, [id_feature], duration=1000)
 
+    # Ferramenta de seleção de rios, permitindo que ele seja selecionado diretamente no mapa.
     def ativar_selecao_rio(self):
+        # Define a camada de rios a partir da seleção do usuário. Se a camada selecionada não for válida, uma mensagem aparece.
         camada_rios = self.sel_camada_rio.currentLayer()
 
         if not camada_rios:
             iface.messageBar().pushMessage("Erro", "Selecione uma camada de rios válida.", level=3)
             return
+        if camada_rios.type() != QgsMapLayerType.VectorLayer:
+            iface.messageBar().pushMessage("Erro", "A camada selecionada deve ser do tipo vetor.", level=3)
+            return
+        campos = camada_rios.fields()
+        if campos.indexOf("cocursodag") == -1 or campos.indexOf("cobacia") == -1 or campos.indexOf("noriocomp") == -1:
+            iface.messageBar().pushMessage("Erro", "A camada selecionada deve conter os campos 'cocursodag', 'cobacia' e 'noriocomp'.", level=3)
+            return
         
         self.ferramenta_selecao_rio = QgsMapToolIdentifyFeature(iface.mapCanvas(), camada_rios)
-
         self.ferramenta_selecao_rio.featureIdentified.connect(self.processar_selecao_rio)
+
         iface.mapCanvas().setMapTool(self.ferramenta_selecao_rio)
-
+        
     def processar_selecao_rio(self, feature):
-        camada = feature.layer()
-        camada.selectByIds([feature.id()])
+        codigo_rio = str(feature["cocursodag"])
+        codigo_bacia = str(feature["cobacia"])
+        nome_rio = str(feature["noriocomp"])
+        amont = str(feature["nuareamont"])
 
-        ottocodigo = feature[""]
-    def analise_montante(self):
+        iface.mapCanvas().unsetMapTool(self.ferramenta_selecao_rio)
+
+        self.disp_nome_rio.setText(nome_rio)
+        self.disp_cod_rio.setText(codigo_rio)
+        self.disp_cod_bacia.setText(codigo_bacia)
+
+
+        self.disp_q95.setText(str(float(amont) * self.sel_qesp.value() * 3.6))
+
+    def analise_montante(self, codigo_rio, codigo_bacia):
         pass
 
     def closeEvent(self, event):
