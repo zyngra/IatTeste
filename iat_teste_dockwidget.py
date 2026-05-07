@@ -28,6 +28,7 @@ from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType,
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.gui import QgsMapToolIdentifyFeature
 from qgis.utils import iface
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -55,8 +56,13 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         # self.sel_camada.setFilters(QgsMapLayerProxyModel.VectorLayer)
 
+        # Executa a análise se o usuário clicar no botão ou apertar Enter.
         self.btn_exec.clicked.connect(self.executar_analise)
         self.valor_pesq.returnPressed.connect(self.executar_analise)
+
+        # O botão de seleção de rio é feito para facilitar a seleção do rio, no lugar do usuário precisar
+        # identificar a camada e extrair o ottocódigo manualmente, usando a ferramenta de seleção do QGIS.
+        self.btn_sel_rio.clicked.connect(self.ativar_selecao_rio)
 
         # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -69,12 +75,6 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.filtrar_camadas_campo("nr_e_protocolo")
 
         QgsProject.instance().layersAdded.connect(lambda: self.filtrar_camadas_campo("nr_e_protocolo"))
-
-    def hide_cpf_cnpj(self):
-        # Função para ocultar o campo de pesquisa de CPF/CNPJ, caso seja necessário. A intenção é que no futuro os campos de pesquisa sejam personalizáveis, mas por ora essa função serve para ocultar o campo de CPF/CNPJ, que é o mais específico e pode não ser relevante para todas as análises.
-        self.sel_campo.setCurrentText("CPF/CNPJ")
-        self.sel_campo.model().item(0).setEnabled(False)
-        self.valor_pesq.setPlaceholderText("Digite o CPF ou CNPJ (apenas números)")
 
     # Função que filtra as camadas disponíveis, mostrando apenas aquelas relevantes
     def filtrar_camadas_campo(self, nome_campo):
@@ -225,6 +225,26 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # A base de dados pode possuir vários pontos extremamente próximos, então o destaque visual é útil na hora de
         # localizar a feição correta.
         iface.mapCanvas().flashFeatureIds(camada, [id_feature], duration=1000)
+
+    def ativar_selecao_rio(self):
+        camada_rios = self.sel_camada_rio.currentLayer()
+
+        if not camada_rios:
+            iface.messageBar().pushMessage("Erro", "Selecione uma camada de rios válida.", level=3)
+            return
+        
+        self.ferramenta_selecao_rio = QgsMapToolIdentifyFeature(iface.mapCanvas(), camada_rios)
+
+        self.ferramenta_selecao_rio.featureIdentified.connect(self.processar_selecao_rio)
+        iface.mapCanvas().setMapTool(self.ferramenta_selecao_rio)
+
+    def processar_selecao_rio(self, feature):
+        camada = feature.layer()
+        camada.selectByIds([feature.id()])
+
+        ottocodigo = feature[""]
+    def analise_montante(self):
+        pass
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
