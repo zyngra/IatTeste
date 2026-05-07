@@ -255,7 +255,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         
     def processar_selecao_rio(self, feature):
         codigo_rio = str(feature["cocursodag"])
-        codigo_bacia = str(feature["cobacia"])
+        codigo_bac = str(feature["cobacia"])
         nome_rio = str(feature["noriocomp"])
         amont = str(feature["nuareamont"])
 
@@ -263,10 +263,11 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.disp_nome_rio.setText(nome_rio)
         self.disp_cod_rio.setText(codigo_rio)
-        self.disp_cod_bacia.setText(codigo_bacia)
+        self.disp_cod_bac.setText(codigo_bac)
+        self.disp_amont.setText(str(round(float(amont), 2))+" km²")
 
 
-        self.disp_q95.setText(str(float(amont) * self.sel_qesp.value() * 3.6))
+        self.disp_q95.setText(str(round((float(amont) * self.sel_qesp.value() * 3.6),2))+" m³/h")
 
     def analise_montante(self, codigo_rio, codigo_bacia):
         pass
