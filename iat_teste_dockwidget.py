@@ -70,6 +70,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         QgsProject.instance().layersAdded.connect(lambda: self.filtrar_camadas_campo("nr_e_protocolo"))
 
+    def hide_cpf_cnpj(self):
+        # Função para ocultar o campo de pesquisa de CPF/CNPJ, caso seja necessário. A intenção é que no futuro os campos de pesquisa sejam personalizáveis, mas por ora essa função serve para ocultar o campo de CPF/CNPJ, que é o mais específico e pode não ser relevante para todas as análises.
+        self.sel_campo.setCurrentText("CPF/CNPJ")
+        self.sel_campo.model().item(0).setEnabled(False)
+        self.valor_pesq.setPlaceholderText("Digite o CPF ou CNPJ (apenas números)")
+
     # Função que filtra as camadas disponíveis, mostrando apenas aquelas relevantes
     def filtrar_camadas_campo(self, nome_campo):
 
@@ -107,6 +113,10 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if not texto_pesquisa:
             QtWidgets.QMessageBox.warning(self, "Erro", "Digite um valor para pesquisa.")
             return
+
+        # Verifica se a camada utilizada possui o campo de CPF/CNPJ, para evitar erros caso o usuário não tenha
+        # acesso à base restrita do IAT.
+        has_cpf_cnpj = camada.fields().indexOf("nr_cpf_cnpj") != -1
 
         # Realiza a limpeza do valor de pesquisa, removendo caracteres especiais como pontos, traços e barras, caso o tipo de filtro seja CPF/CNPJ ou Protocolo.
         # A base de dados possui valores sem esses caracteres especiais, então a pesquisa é feita sem eles.
@@ -148,6 +158,11 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(4, QHeaderView.Stretch)
 
+        # Esconde a coluna de ID, que é utilizada apenas para lógica interna, e a camada de CPF/CNPJ se a base
+        # de dados utilizada não a possuir.
+        header.setColumnHidden(0, True)
+        header.setColumnHidden(1, not has_cpf_cnpj)
+
         self.tabela.setRowCount(0)
         linha = 0
 
@@ -158,7 +173,10 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             encontrou_resultados = True
             id_feature = str(feature.id())
 
-            val_cpf_cnpj = str(feature["nr_cpf_cnpj"])
+            if has_cpf_cnpj:
+                val_cpf_cnpj = str(feature["nr_cpf_cnpj"])
+            else:
+                val_cpf_cnpj = "Campo não disponível"
             val_protocolo = str(feature["nr_e_protocolo"])
             val_nome = str(feature["nm_requerente"])
             val_portaria = str(feature["nr_portaria"])
