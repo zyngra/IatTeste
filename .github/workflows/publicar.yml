@@ -19,7 +19,8 @@ jobs:
                 mkdir package_final
                 # Copia tudo para uma pasta IatTeste, ignorando arquivos de dev
                 rsync -r --exclude='.git' --exclude='.github' --exclude='.devcontainer' --exclude='__pycache__' --exclude='*.pyc' --exclude='*.pyo' --exclude='*.log' --exclude='*.md' --exclude='*.yml' --exclude='*.yaml' --exclude='*.json' --exclude='*.env' --exclude='*.db' --exclude='package_final' ./ package_final/IatTeste
-                cd package_final && zip -r ../IatTeste.zip IatTeste/
+                cd package_final
+                zip -r IatTeste.zip IatTeste/
             
             - name: 3. Publicar
               uses: softprops/action-gh-release@v2
