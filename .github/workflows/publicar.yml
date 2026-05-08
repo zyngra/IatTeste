@@ -26,3 +26,4 @@ jobs:
               with:
                 files: package_final/IatTeste.zip
                 generate_release_notes: true
+                token: ${{ secrets.MEU_TOKEN_GRANULAR}}
