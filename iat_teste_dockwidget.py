@@ -90,23 +90,26 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         camadas_para_filtrar = []
 
         todas_camadas = QgsProject.instance().mapLayers().values()
+        campo_buscado = nome_campo.lower()
 
         # Itera sobre todas as camadas do projeto e verifica se são do tipo vetor e se possuem o campo específico. Se não atenderem a esses critérios, são adicionadas à lista de camadas a serem filtradas.
         for camada in todas_camadas:
             if camada.type() != QgsMapLayerType.VectorLayer:
                 camadas_para_filtrar.append(camada)
                 continue
-            if camada.fields().indexOf(nome_campo) == -1:
+            nomes_das_colunas = [campo.name().lower() for campo in camada.fields()]
+            if campo_buscado not in nomes_das_colunas:
                 camadas_para_filtrar.append(camada)
+            # Envia a lista de camadas a serem filtradas para o widget de seleção de camadas, que irá ocultá-las da lista de opções disponíveis para o usuário.
+            box_alvo.setExceptedLayerList(camadas_para_filtrar)
 
-        # Envia a lista de camadas a serem filtradas para o widget de seleção de camadas, que irá ocultá-las da lista de opções disponíveis para o usuário.
-        box_alvo.setExceptedLayerList(camadas_para_filtrar)
-
-    def atualizar_todos_filtros(self):
-    
-        self.filtrar_camadas_campo(self.sel_camada, "nr_e_protocolo")
-        self.filtrar_camadas_campo(self.sel_camada_rio, "noriocomp")
-        self.filtrar_camadas_campo(self.sel_camada_ottobacias, "shape_Area")
+    def atualizar_todos_filtros(self, *args):
+        try:
+            self.filtrar_camadas_campo(self.sel_camada, "nr_e_protocolo")
+            self.filtrar_camadas_campo(self.sel_camada_rio, "noriocomp")
+            self.filtrar_camadas_campo(self.sel_camada_ottobacias, "shape_area")
+        except Exception as e:
+            print(f"Erro ao atualizar filtros: {e}")
 
     # Componente principal do widget, onde ocorre a lógica de análise dos dados. Ele verifica se a camada selecionada é válida, constrói uma expressão de filtro com base no tipo de pesquisa escolhida e no valor digitado, e então executa a consulta na camada para obter os resultados correspondentes. Os resultados são exibidos em uma tabela, e o usuário pode clicar duas vezes em um resultado para dar zoom no ponto correspondente no mapa.
     def executar_analise(self):
