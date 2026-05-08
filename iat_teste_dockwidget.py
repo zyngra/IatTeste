@@ -68,7 +68,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # estágios iniciais de implementação, mas a ideia é que ele utilize os códigos de rio e bacia para
         # realizar a seleção automática das ottobacias a montante e o predicado geométrico de contenção
         # para determinar os pontos outorgados e a vazão indisponível.
-        self.btn_exec_mont.clicked.connect(lambda: self.analise_montante(self.disp_cod_rio.text(), self.disp_cod_bacia.text()))
+        self.btn_exec_mont.clicked.connect(lambda: self.analise_montante(self.disp_cod_rio.text(), self.disp_cod_bac.text()))
 
         # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -76,6 +76,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tabela.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         self.tabela.setColumnHidden(0, True)
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
+
+        self.amont_atual = 0.0
+        self.sel_qesp.valueChanged.connect(self.atualizar_calculos)
+        self.radioBtn_100.toggled.connect(self.atualizar_calculos)
+        self.radioBtn_80.toggled.connect(self.atualizar_calculos)
+        self.radioBtn_50.toggled.connect(self.atualizar_calculos)
 
         # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
         # self.filtrar_camadas_campo("nr_e_protocolo")
@@ -276,19 +282,34 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.disp_cod_bac.setText(codigo_bac)
         self.disp_amont.setText(str(round(float(amont), 2))+" km²")
 
-        porc_out = 0
+        self.amont_atual = float(amont)
 
-        if self.radioBtn_100.isChecked():
-            porc_out = 1
-        elif self.radioBtn_80.isChecked():
-            porc_out = 0.8
-        else:
-            porc_out = 0.5
+        self.atualizar_calculos()
 
-        val_q95 = round(float(amont) * self.sel_qesp.value() * 3.6, 2)
-        val_qoutorgavel = round(val_q95 * porc_out, 2)
-        self.disp_q95.setText(str(val_q95)+" m³/h")
-        self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
+    def atualizar_calculos(self):
+        if getattr(self, 'amont_atual', 0.0) == 0.0:
+            self.disp_q95.setText("0 m³/h")
+            self.disp_qoutorgavel.setText("0 m³/h")
+            return
+        try:
+
+            amont = self.amont_atual
+            porc_out = 0
+
+            if self.radioBtn_100.isChecked():
+                porc_out = 1
+            elif self.radioBtn_80.isChecked():
+                porc_out = 0.8
+            else:
+                porc_out = 0.5
+
+            val_q95 = round(float(amont) * self.sel_qesp.value() * 3.6, 2)
+            val_qoutorgavel = round(val_q95 * porc_out, 2)
+            self.disp_q95.setText(str(val_q95)+" m³/h")
+            self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
+
+        except Exception as e:
+            print(f"Erro ao atualizar cálculos: {e}")
 
     def analise_montante(self, codigo_rio, codigo_bacia):
         pass
