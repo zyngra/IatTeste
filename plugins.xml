@@ -1,6 +1,6 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
 <plugins>
-    <pyqgis_plugin name="IatTeste" version="1.0.0a">
+    <pyqgis_plugin name="IatTeste" version="v1.0.0a">
         <description>Ferramenta automatizada para análise a montante, cruzamento de outorgas e geração de laudos padronizados para o SIGARH.</description>
         <about>Plugin desenvolvido para otimizar as análises técnicas de recursos hídricos.</about>
         <version>v1.0.0a</version>
