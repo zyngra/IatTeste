@@ -266,8 +266,19 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.disp_cod_bac.setText(codigo_bac)
         self.disp_amont.setText(str(round(float(amont), 2))+" km²")
 
+        porc_out = 0
 
-        self.disp_q95.setText(str(round((float(amont) * self.sel_qesp.value() * 3.6),2))+" m³/h")
+        if self.radioBtn_100.isChecked():
+            porc_out = 1
+        elif self.radioBtn_80.isChecked():
+            porc_out = 0.8
+        else:
+            porc_out = 0.5
+
+        val_q95 = round(float(amont) * self.sel_qesp.value() * 3.6, 2)
+        val_qoutorgavel = round(val_q95 * self.sel_qoutorgavel.value() * porc_out, 2)
+        self.disp_q95.setText(str(val_q95)+" m³/h")
+        self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
 
     def analise_montante(self, codigo_rio, codigo_bacia):
         pass
