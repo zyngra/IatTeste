@@ -1,0 +1,28 @@
+name: Publicar Plugin
+
+on:
+    push:
+        tags:
+            - '*.*.*'
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            packages: write
+        steps:
+            - name: 1. Puxar código
+              uses: actions/checkout@v4
+
+            - name: 2. Organizar a estrutura e criar zip
+              run: |
+                mkdir package_final
+                # Copia tudo para uma pasta IatTeste, ignorando arquivos de dev
+                rsync -r --exclude='.git' --exclude='.github' --exclude='.devcontainer' --exclude='__pycache__' --exclude='*.pyc' --exclude='*.pyo' --exclude='*.log' --exclude='*.md' --exclude='*.yml' --exclude='*.yaml' --exclude='*.json' --exclude='*.env' --exclude='*.db' --exclude='package_final' ./ package_final/IatTeste
+                cd package_final && zip -r ../IatTeste.zip IatTeste/
+            
+            - name: 3. Publicar
+              uses: softprops/action-gh-release@v2
+              with:
+                files: package_final/IatTeste.zip
+                generate_release_notes: true
