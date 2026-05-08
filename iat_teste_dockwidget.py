@@ -78,12 +78,14 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
         # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
-        self.filtrar_camadas_campo("nr_e_protocolo")
+        # self.filtrar_camadas_campo("nr_e_protocolo")
 
-        QgsProject.instance().layersAdded.connect(lambda: self.filtrar_camadas_campo("nr_e_protocolo"))
+        # QgsProject.instance().layersAdded.connect(lambda: self.filtrar_camadas_campo("nr_e_protocolo"))
+        self.atualizar_todos_filtros()
+        QgsProject.instance().layersAdded.connect(self.atualizar_todos_filtros)
 
     # Função que filtra as camadas disponíveis, mostrando apenas aquelas relevantes
-    def filtrar_camadas_campo(self, nome_campo):
+    def filtrar_camadas_campo(self, box_alvo, nome_campo):
 
         camadas_para_filtrar = []
 
@@ -98,8 +100,13 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 camadas_para_filtrar.append(camada)
 
         # Envia a lista de camadas a serem filtradas para o widget de seleção de camadas, que irá ocultá-las da lista de opções disponíveis para o usuário.
-        self.sel_camada.setExceptedLayerList(camadas_para_filtrar)
+        box_alvo.setExceptedLayerList(camadas_para_filtrar)
 
+    def atualizar_todos_filtros(self):
+    
+        self.filtrar_camadas_campo(self.sel_camada, "nr_e_protocolo")
+        self.filtrar_camadas_campo(self.sel_camada_rio, "noriocomp")
+        self.filtrar_camadas_campo(self.sel_camada_ottobacias, "shape_Area")
 
     # Componente principal do widget, onde ocorre a lógica de análise dos dados. Ele verifica se a camada selecionada é válida, constrói uma expressão de filtro com base no tipo de pesquisa escolhida e no valor digitado, e então executa a consulta na camada para obter os resultados correspondentes. Os resultados são exibidos em uma tabela, e o usuário pode clicar duas vezes em um resultado para dar zoom no ponto correspondente no mapa.
     def executar_analise(self):
@@ -276,7 +283,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             porc_out = 0.5
 
         val_q95 = round(float(amont) * self.sel_qesp.value() * 3.6, 2)
-        val_qoutorgavel = round(val_q95 * self.sel_qoutorgavel.value() * porc_out, 2)
+        val_qoutorgavel = round(val_q95 * porc_out, 2)
         self.disp_q95.setText(str(val_q95)+" m³/h")
         self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
 
