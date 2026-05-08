@@ -34,6 +34,9 @@ from qgis.utils import iface
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'iat_teste_dockwidget_base.ui'))
 
+DIALOG_CLASS, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'analise_mont.ui'))
+
 
 class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
