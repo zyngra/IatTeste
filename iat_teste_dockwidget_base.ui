@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
+    <width>702</width>
     <height>449</height>
    </rect>
   </property>
@@ -290,6 +290,29 @@
          <widget class="QLabel" name="label_7">
           <property name="text">
            <string>Nome (se houver)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="4">
+         <widget class="QSpinBox" name="sel_area_prop">
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>100</number>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="3">
+         <widget class="QLabel" name="label_12">
+          <property name="text">
+           <string>Área proporcional</string>
           </property>
          </widget>
         </item>

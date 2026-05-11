@@ -81,7 +81,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
         self.amont_atual = 0.0
+        self.acont_atual = 0.0
         self.sel_qesp.valueChanged.connect(self.atualizar_calculos)
+        self.sel_area_prop.valueChanged.connect(self.atualizar_calculos)
         self.radioBtn_100.toggled.connect(self.atualizar_calculos)
         self.radioBtn_80.toggled.connect(self.atualizar_calculos)
         self.radioBtn_50.toggled.connect(self.atualizar_calculos)
@@ -276,6 +278,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         codigo_rio = str(feature["cocursodag"])
         codigo_bac = str(feature["cobacia"])
         nome_rio = str(feature["noriocomp"])
+        acont = str(feature["nuareacont"])
         amont = str(feature["nuareamont"])
 
         iface.mapCanvas().unsetMapTool(self.ferramenta_selecao_rio)
@@ -283,20 +286,21 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.disp_nome_rio.setText(nome_rio)
         self.disp_cod_rio.setText(codigo_rio)
         self.disp_cod_bac.setText(codigo_bac)
-        self.disp_amont.setText(str(round(float(amont), 2))+" km²")
 
         self.amont_atual = float(amont)
+        self.acont_atual = float(acont)
 
         self.atualizar_calculos()
 
     def atualizar_calculos(self):
-        if getattr(self, 'amont_atual', 0.0) == 0.0:
+        if getattr(self, 'amont_atual', 0.0) == 0.0 or getattr(self, 'acont_atual', 0.0) == 0.0:
             self.disp_q95.setText("0 m³/h")
             self.disp_qoutorgavel.setText("0 m³/h")
             return
         try:
 
             amont = self.amont_atual
+            acont = self.acont_atual
             porc_out = 0
 
             if self.radioBtn_100.isChecked():
@@ -306,8 +310,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 porc_out = 0.5
 
-            val_q95 = round(float(amont) * self.sel_qesp.value() * 3.6, 2)
+            aprop = (amont - acont) + (acont * (self.sel_area_prop.value() / 100))
+            val_q95 = round(aprop * self.sel_qesp.value() * 3.6, 2)
+
             val_qoutorgavel = round(val_q95 * porc_out, 2)
+
+            self.disp_amont.setText(str(round(aprop, 2))+" km²")
             self.disp_q95.setText(str(val_q95)+" m³/h")
             self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
 
