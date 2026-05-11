@@ -24,7 +24,7 @@
 
 import os
 
-from qgis.core import QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject
+from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
@@ -96,29 +96,32 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         QgsProject.instance().layersAdded.connect(self.atualizar_todos_filtros)
 
     # Função que filtra as camadas disponíveis, mostrando apenas aquelas relevantes
-    def filtrar_camadas_campo(self, box_alvo, nome_campo):
+    def filtrar_camadas_campo(self, box_alvo, lista_campos):
 
         camadas_para_filtrar = []
 
         todas_camadas = QgsProject.instance().mapLayers().values()
-        campo_buscado = nome_campo.lower()
+        campos_buscados = [campo.lower() for campo in lista_campos]
 
         # Itera sobre todas as camadas do projeto e verifica se são do tipo vetor e se possuem o campo específico. Se não atenderem a esses critérios, são adicionadas à lista de camadas a serem filtradas.
         for camada in todas_camadas:
             if camada.type() != QgsMapLayerType.VectorLayer:
                 camadas_para_filtrar.append(camada)
                 continue
+
             nomes_das_colunas = [campo.name().lower() for campo in camada.fields()]
-            if campo_buscado not in nomes_das_colunas:
+            
+            if not any(campo_buscado in nomes_das_colunas for campo_buscado in campos_buscados):
                 camadas_para_filtrar.append(camada)
+            
             # Envia a lista de camadas a serem filtradas para o widget de seleção de camadas, que irá ocultá-las da lista de opções disponíveis para o usuário.
             box_alvo.setExceptedLayerList(camadas_para_filtrar)
 
     def atualizar_todos_filtros(self, *args):
         try:
-            self.filtrar_camadas_campo(self.sel_camada, "nr_e_protocolo")
-            self.filtrar_camadas_campo(self.sel_camada_rio, "noriocomp")
-            self.filtrar_camadas_campo(self.sel_camada_ottobacias, "shape_area")
+            self.filtrar_camadas_campo(self.sel_camada, ["nr_e_protocolo", "PROTOCOLO"])
+            self.filtrar_camadas_campo(self.sel_camada_rio, ["noriocomp"])
+            self.filtrar_camadas_campo(self.sel_camada_ottobacias, ["shape_area"])
         except Exception as e:
             print(f"Erro ao atualizar filtros: {e}")
 
@@ -323,8 +326,174 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             print(f"Erro ao atualizar cálculos: {e}")
 
     def analise_montante(self, codigo_rio, codigo_bacia):
-        pass
+        if not codigo_rio or not codigo_bacia:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Código de rio ou bacia não encontrado. Selecione um rio para análise de montante.")
+            return
+        
+        layer_bacia = self.sel_camada_ottobacias.currentLayer()
+        if not layer_bacia:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Selecione uma camada de bacias válida para análise de montante.")
+            return
+
+        lista_outorgas = []
+
+        for i in range(self.sel_camada.count()):
+            layer = self.sel_camada.layer(i)
+            if layer:
+                lista_outorgas.append(layer)
+
+        if not layer_bacia or not lista_outorgas:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Camada de bacias ou camadas de outorgas não encontradas. Verifique suas seleções para análise de montante.")
+            return
+
+        self.dialogo_montante = DialogoMontante(layer_bacia, lista_outorgas, codigo_rio, codigo_bacia, self.disp_nome_rio.text().strip())
+        self.dialogo_montante.show()
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
+        event.accept()
+
+class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
+    def __init__(self, layer_bacia, lista_outorgas, cod_rio, cod_bac, nome_rio, parent=None):
+        super(DialogoMontante, self).__init__(parent)
+        self.setupUi(self)
+
+        self.layer_bacia = layer_bacia
+        self.lista_outorgas = lista_outorgas
+        self.cod_rio = cod_rio
+        self.cod_bac = cod_bac
+        self.nome_rio = nome_rio
+
+        self.tabela_resMont.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.tabela_resMont.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+
+        self.btn_exec.clicked.connect(self.executar_cruzamento)
+        self.btn_cop.clicked.connect(self.copiar_resultados)
+
+    def buscar_valor_campo(self, feature, lista_nomes):
+        for nome in lista_nomes:
+            idx = feature.fieldNameIndex(nome)
+            if idx != -1:
+                return feature[nome]
+        return None
+        
+    def executar_cruzamento(self):
+        expressao = f"\"cocursodag\" LIKE '{self.cod_rio}%' and \"cobacia\" >= '{self.cod_bac}'"
+        req_bacias = QgsFeatureRequest().setFilterExpression(expressao)
+
+        geom_montante = QgsGeometry()
+        for f in self.layer_bacia.getFeatures(req_bacias):
+            if geom_montante.isNull():
+                geom_montante = f.geometry()
+            else:
+                geom_montante = geom_montante.combine(f.geometry())
+
+        if geom_montante.isNull():
+            QtWidgets.QMessageBox.warning(self, "Erro", "Não foi possível determinar a geometria de montante para o rio selecionado.")
+            return
+
+        crs_bacia = self.layer_bacia.crs()
+
+        nome_camada = f"Montante_{self.cod_rio}_{self.cod_bac}_{self.nome_rio}"
+        camada_montante = QgsVectorLayer("Polygon", nome_camada, "memory")
+        camada_montante.setCrs(crs_bacia)
+
+        provedor = camada_montante.dataProvider()
+        feature_debug = QgsFeature()
+        feature_debug.setGeometry(geom_montante)
+        provedor.addFeatures([feature_debug])
+        camada_montante.updateExtents()
+
+        simbolo = QgsSymbol.defaultSymbol(camada_montante.geometryType())
+        simbolo.setColor(QtGui.QColor(255, 0, 0, 75))
+        simbolo.symbolLayer(0).setStrokeColor(QtGui.QColor(255, 0, 0))
+        simbolo.symbolLayer(0).setStrokeWidth(0.5)
+
+        camada_montante.setRenderer(QgsSingleSymbolRenderer(simbolo))
+
+        QgsProject.instance().addMapLayer(camada_montante, False)
+        root = QgsProject.instance().layerTreeRoot()
+        root.insertLayer(0, camada_montante)
+
+        self.tabela_resMont.setRowCount(0)
+
+        self.tabela_resMont.setColumnCount(4)
+        self.tabela_resMont.setHorizontalHeaderLabels(["Portaria/Protocolo", "Razão Social", "Finalidades", "Vazão Outorgada"])
+
+        header = self.tabela_resMont.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
+
+        linha = 0
+        vaz_tot = 0.0
+
+        for layer in self.lista_outorgas:
+            req_outorgas = QgsFeatureRequest().setFilterRect(geom_montante.boundingBox())
+
+            for outorga in layer.getFeatures(req_outorgas):
+                if geom_montante.contains(outorga.geometry()) or outorga.geometry().intersects(geom_montante):
+                    tipo_poco = self.buscar_valor_campo(outorga, ["desc_tipo_poco", "DESC_TIPO_POCO", "tipo_poco", "TIPO_POCO", "tipo_manancial", "TIPO_MANANCIAL"])
+                    if tipo_poco is not None and str(tipo_poco).strip() != "" and str(tipo_poco).strip() != "NULL":
+                        continue
+                    portaria = self.buscar_valor_campo(outorga, ["nr_portaria", "PORTARIA"])
+                    protocolo = self.buscar_valor_campo(outorga, ["nr_e_protocolo", "PROTOCOLO"])
+                    requerente = self.buscar_valor_campo(outorga, ["nm_requerente", "RAZAOSOCIAL"])
+                    finalidade = self.buscar_valor_campo(outorga, ["desc_finalidades", "FINALIDADES"])
+
+                    vazao_raw = self.buscar_valor_campo(outorga, ["vlr_vazao_capt_lanc_jan", "VAZAO_OUTORGADA_M3_H"])
+                    try:
+                        vazao = float(vazao_raw) if vazao_raw is not None and str(vazao_raw).strip() != "" else 0.0
+                    except ValueError:
+                        vazao = 0.0
+                    
+                    vaz_tot += vazao
+                    if portaria is not None and portaria != "":
+                        str_portaria = str(portaria)
+                        portariaExistente = True
+                    else:
+                        str_portaria = "N/A"
+                        portariaExistente = False
+                    
+                    self.tabela_resMont.insertRow(linha)
+                    match portariaExistente:
+                        case True:
+                            self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(str_portaria))
+                        case False:
+                            self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(protocolo))
+                    self.tabela_resMont.setItem(linha, 1, QTableWidgetItem(requerente))
+                    self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(finalidade))
+                    self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vazao)+" m³/h"))
+                    linha += 1
+        self.tabela_resMont.insertRow(linha)
+        self.tabela_resMont.setItem(linha, 0, QTableWidgetItem("Vazão Total"))
+        self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vaz_tot)+" m³/h"))
+
+    def copiar_resultados(self):
+        num_linhas = self.tabela_resMont.rowCount()
+        num_colunas = self.tabela_resMont.columnCount()
+
+        resultados_texto = ""
+
+        headers = []
+        for col in range(num_colunas):
+            item_header = self.tabela_resMont.horizontalHeaderItem(col)
+            headers.append(item_header.text() if item_header else f"Coluna {col}")
+
+        resultados_texto += "\t".join(headers) + "\n"
+
+        for linha in range (num_linhas):
+            valores_linha = []
+            for col in range(num_colunas):
+                item = self.tabela_resMont.item(linha, col)
+                valor = item.text() if item else ""
+                valores_linha.append(valor)
+
+            resultados_texto += "\t".join(valores_linha) + "\n"
+
+        QtWidgets.QApplication.clipboard().setText(resultados_texto)
+        iface.messageBar().pushMessage("Sucesso", "Resultados copiados para a área de transferência.", level=0, duration=3)
+
+    def closeEvent(self, event):
         event.accept()
