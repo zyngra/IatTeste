@@ -8,6 +8,6 @@
         <homepage>https://github.com/zyngra/IatTeste</homepage>
         <file_name>IatTeste.zip</file_name>
         <author_name>Pedro Romanzini</author_name>
-        <download_url>https://github.com/zyngra/IatTeste/releases/download/2.0.0rc1/IatTeste.zip?v=3</download_url>
+        <download_url>https://github.com/zyngra/IatTeste/releases/download/2.0.0rc1/IatTeste.zip</download_url>
     </pyqgis_plugin>
 </plugins>

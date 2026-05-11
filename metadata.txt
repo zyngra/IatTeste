@@ -20,7 +20,7 @@ repository=https://github.com/zyngra/IatTeste
 
 hasProcessingProvider=no
 # Uncomment the following line and add your changelog:
-changelog=Primeira versão estável. - Busca de usuários - Análise de vazão disponível em um ponto.
+changelog=Busca de usuários - Análise de vazão disponível em um ponto - Análise de área proporcional e de montante
 
 # Tags are comma separated with spaces allowed
 tags=python, gestão
