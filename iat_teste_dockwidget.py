@@ -364,14 +364,14 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def gerar_memorial(self, vazao_montante):
         if getattr(self, 'val_qoutorgavel', 0.0) == 0.0:
-            QtWidgets.QMessageBox.warning(self, "Erro", "Realize a análise de montante antes de gerar o memorial descritivo.")
+            QtWidgets.QMessageBox.warning(self, "Erro", "Selecione ao menos um corpo hídrico para gerar o memorial.")
             return
 
         self.saldo_q = self.val_qoutorgavel - vazao_montante
 
         texto_memorial = ( 
             f"Memorial descritivo de análise de montante\n\n"
-            f"Rio: {self.disp_nome_rio.text()}\n"
+            f"Corpo hídrico: {self.disp_nome_rio.text()}\n"
             f"Área de montante: {self.aprop:.2f} km²\n"
             f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
             f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n"
@@ -386,7 +386,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             texto_memorial += "\n\nObservação: A vazão outorgada a montante excede a vazão outorgável calculada, indicando que não há disponibilidade hídrica para novas outorgas nesse cenário."
         else:
             texto_memorial += "\n\nObservação: A vazão outorgada a montante é inferior à vazão outorgável calculada, indicando que há disponibilidade hídrica para novas outorgas nesse cenário."
-        
+
+        texto_memorial += "\n\nEste memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.\n\nO técnico deverá conferir as informações contra a análise integrada quando possível."
+
         popup = QtWidgets.QDialog(self)
         popup.setWindowTitle("Memorial Descritivo")
         popup.resize(550, 400)
@@ -491,6 +493,11 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
         vaz_tot = 0.0
 
         for layer in self.lista_outorgas:
+            nome_layer = layer.name().upper()
+            possui_vazao = layer.fields().indexOf("vlr_vazao_capt_lanc_jan") != -1 or layer.fields().indexOf("VAZAO_OUTORGADA_M3_H") != -1
+
+            if "AIA" in nome_layer or "Áreas autuadas/embargadas" in nome_layer or not possui_vazao:
+                continue
             req_outorgas = QgsFeatureRequest().setFilterRect(geom_montante.boundingBox())
 
             for outorga in layer.getFeatures(req_outorgas):
@@ -518,14 +525,17 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                         except (ValueError, TypeError):
                             vazao = 0.0
                     
-                    vaz_tot += vazao
+
                     if portaria is not None and portaria != "":
                         str_portaria = str(portaria)
                         portariaExistente = True
-                    else:
+                    elif protocolo is not None and protocolo != "":
                         str_portaria = "N/A"
                         portariaExistente = False
+                    else:
+                        continue
                     
+                    vaz_tot += vazao
                     self.tabela_resMont.insertRow(linha)
                     match portariaExistente:
                         case True:
@@ -534,12 +544,13 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                             self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(str(protocolo)))
                     self.tabela_resMont.setItem(linha, 1, QTableWidgetItem(str(requerente)))
                     self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(str(finalidade)))
-                    self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vazao)+" m³/h"))
+                    self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(f"{vazao:.2f} m³/h"))
                     linha += 1
 
+        vaz_tot = round(vaz_tot, 2)
         self.tabela_resMont.insertRow(linha)
         self.tabela_resMont.setItem(linha, 0, QTableWidgetItem("Vazão Total"))
-        self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vaz_tot)+" m³/h"))
+        self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(f"{vaz_tot:.2f} m³/h"))
 
         self.calculo_concluido.emit(vaz_tot)
 
