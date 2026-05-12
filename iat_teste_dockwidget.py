@@ -481,7 +481,7 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
         self.tabela_resMont.setRowCount(0)
 
         self.tabela_resMont.setColumnCount(4)
-        self.tabela_resMont.setHorizontalHeaderLabels(["Portaria/Protocolo", "Razão Social", "Finalidades", "Vazão Outorgada"])
+        self.tabela_resMont.setHorizontalHeaderLabels(["Portaria/Protocolo", "Razão Social", "Finalidades", "Vazão Outorgada (m³/h)"])
 
         header = self.tabela_resMont.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -534,7 +534,7 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                         portariaExistente = False
                     else:
                         continue
-                    
+
                     vaz_tot += vazao
                     self.tabela_resMont.insertRow(linha)
                     match portariaExistente:
@@ -544,7 +544,7 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                             self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(str(protocolo)))
                     self.tabela_resMont.setItem(linha, 1, QTableWidgetItem(str(requerente)))
                     self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(str(finalidade)))
-                    self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(f"{vazao:.2f} m³/h"))
+                    self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(f"{vazao:.2f}"))
                     linha += 1
 
         vaz_tot = round(vaz_tot, 2)
