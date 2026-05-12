@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>826</width>
-    <height>449</height>
+    <height>453</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -64,10 +64,23 @@
           <property name="editable">
            <bool>true</bool>
           </property>
+          <property name="currentText">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string/>
+          </property>
+          <property name="duplicatesEnabled">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="2" column="0">
-         <widget class="QLineEdit" name="valor_pesq"/>
+         <widget class="QLineEdit" name="valor_pesq">
+          <property name="placeholderText">
+           <string>Campo de pesquisa. Selecione a opção e a camada acima.</string>
+          </property>
+         </widget>
         </item>
        </layout>
       </widget>
@@ -114,16 +127,6 @@
         </item>
         <item row="4" column="4">
          <widget class="QLineEdit" name="disp_cod_bac">
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="18" column="4">
-         <widget class="QLineEdit" name="disp_qoutorgavel">
           <property name="dragEnabled">
            <bool>true</bool>
           </property>
@@ -190,12 +193,15 @@
          <widget class="QgsMapLayerComboBox" name="sel_camada_ottobacias"/>
         </item>
         <item row="16" column="4">
-         <widget class="QLineEdit" name="disp_vout">
+         <widget class="QLineEdit" name="disp_ja_out">
           <property name="dragEnabled">
            <bool>true</bool>
           </property>
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+          <property name="placeholderText">
+           <string>Executar análise de montante</string>
           </property>
          </widget>
         </item>
@@ -271,13 +277,6 @@
           </property>
          </widget>
         </item>
-        <item row="18" column="3">
-         <widget class="QLabel" name="label_10">
-          <property name="text">
-           <string>Qoutorgável</string>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="1" colspan="2">
          <widget class="QLabel" name="label_7">
           <property name="text">
@@ -316,13 +315,53 @@
           </property>
          </widget>
         </item>
-        <item row="12" column="4" rowspan="3">
-         <widget class="QTextEdit" name="textEdit">
+        <item row="14" column="4">
+         <widget class="QLineEdit" name="disp_qoutorgavel">
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="14" column="3">
+         <widget class="QLabel" name="label_10">
+          <property name="text">
+           <string>Qoutorgável</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="3">
+         <widget class="QLabel" name="label_13">
+          <property name="text">
+           <string>Qdisponível</string>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="4">
+         <widget class="QLineEdit" name="disp_qdisponivel">
+          <property name="font">
+           <font>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
           <property name="placeholderText">
-           <string>Memorial de cálculo (realizar análise de montante antes)</string>
+           <string>Vazão disponível (Qout - QjaOut)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="4">
+         <widget class="QPushButton" name="btn_ger_memcalc">
+          <property name="text">
+           <string>Gerar memorial de cálculo</string>
           </property>
          </widget>
         </item>

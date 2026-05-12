@@ -73,6 +73,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # para determinar os pontos outorgados e a vazão indisponível.
         self.btn_exec_mont.clicked.connect(lambda: self.analise_montante(self.disp_cod_rio.text(), self.disp_cod_bac.text()))
 
+        self.vazao_outorgada = 0.0
+        self.btn_ger_memcalc.clicked.connect(lambda: self.gerar_memorial(self.vazao_outorgada))
+
         # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
@@ -304,23 +307,23 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             amont = self.amont_atual
             acont = self.acont_atual
-            porc_out = 0
+            self.porc_out = 0
 
             if self.radioBtn_100.isChecked():
-                porc_out = 1
+                self.porc_out = 1
             elif self.radioBtn_80.isChecked():
-                porc_out = 0.8
+                self.porc_out = 0.8
             else:
-                porc_out = 0.5
+                self.porc_out = 0.5
 
-            aprop = (amont - acont) + (acont * (self.sel_area_prop.value() / 100))
-            val_q95 = round(aprop * self.sel_qesp.value() * 3.6, 2)
+            self.aprop = (amont - acont) + (acont * (self.sel_area_prop.value() / 100))
+            self.val_q95 = round(self.aprop * self.sel_qesp.value() * 3.6, 2)
 
-            val_qoutorgavel = round(val_q95 * porc_out, 2)
+            self.val_qoutorgavel = round(self.val_q95 * self.porc_out, 2)
 
-            self.disp_amont.setText(str(round(aprop, 2))+" km²")
-            self.disp_q95.setText(str(val_q95)+" m³/h")
-            self.disp_qoutorgavel.setText(str(val_qoutorgavel)+" m³/h")
+            self.disp_amont.setText(str(round(self.aprop, 2))+" km²")
+            self.disp_q95.setText(str(self.val_q95)+" m³/h")
+            self.disp_qoutorgavel.setText(str(self.val_qoutorgavel)+" m³/h")
 
         except Exception as e:
             print(f"Erro ao atualizar cálculos: {e}")
@@ -347,13 +350,67 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return
 
         self.dialogo_montante = DialogoMontante(layer_bacia, lista_outorgas, codigo_rio, codigo_bacia, self.disp_nome_rio.text().strip())
+        self.dialogo_montante.calculo_concluido.connect(self.receber_vazao_montante)
+
         self.dialogo_montante.show()
+
+    def receber_vazao_montante(self, vazao):
+        self.vazao_outorgada = vazao
+        self.disp_ja_out.setText(f"{vazao:.2f} m³/h")
+        self.saldo_q = getattr(self, 'val_qoutorgavel', 0.0) - vazao
+
+        if hasattr(self, 'disp_qdisponivel'):
+            self.disp_qdisponivel.setText(f"{self.saldo_q:.2f} m³/h")
+
+    def gerar_memorial(self, vazao_montante):
+        if getattr(self, 'val_qoutorgavel', 0.0) == 0.0:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Realize a análise de montante antes de gerar o memorial descritivo.")
+            return
+
+        self.saldo_q = self.val_qoutorgavel - vazao_montante
+
+        texto_memorial = ( 
+            f"Memorial descritivo de análise de montante\n\n"
+            f"Rio: {self.disp_nome_rio.text()}\n"
+            f"Área de montante: {self.aprop:.2f} km²\n"
+            f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
+            f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n"
+            f"Vazão Outorgada a Montante: {vazao_montante:.2f} m³/h\n"
+            f"Vazão Disponível e Outorgável: {self.saldo_q:.2f} m³/h\n\n"
+            f"Q95 = {self.aprop:.2f} km² * {self.sel_qesp.value():.2f} L/s/km² * 3.6 = {self.val_q95:.2f} m³/h\n"
+            f"Qoutorgável = {self.val_q95:.2f} m³/h * {self.porc_out*100:.0f}% = {self.val_qoutorgavel:.2f} m³/h\n"
+            f"Qdisponível = {self.val_qoutorgavel:.2f} m³/h - {vazao_montante:.2f} m³/h = {self.saldo_q:.2f} m³/h"
+            )
+        
+        if self.saldo_q < 0:
+            texto_memorial += "\n\nObservação: A vazão outorgada a montante excede a vazão outorgável calculada, indicando que não há disponibilidade hídrica para novas outorgas nesse cenário."
+        else:
+            texto_memorial += "\n\nObservação: A vazão outorgada a montante é inferior à vazão outorgável calculada, indicando que há disponibilidade hídrica para novas outorgas nesse cenário."
+        
+        popup = QtWidgets.QDialog(self)
+        popup.setWindowTitle("Memorial Descritivo")
+        popup.resize(550, 400)
+
+        layout = QtWidgets.QVBoxLayout(popup)
+
+        caixa_texto = QtWidgets.QTextEdit(popup)
+        caixa_texto.setReadOnly(True)
+        caixa_texto.setText(texto_memorial)
+        layout.addWidget(caixa_texto)
+
+        btn_fechar = QtWidgets.QPushButton("Fechar", popup)
+        btn_fechar.clicked.connect(popup.accept)
+        layout.addWidget(btn_fechar)
+
+        popup.exec_()
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
 
 class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
+
+    calculo_concluido = pyqtSignal(float)
     def __init__(self, layer_bacia, lista_outorgas, cod_rio, cod_bac, nome_rio, parent=None):
         super(DialogoMontante, self).__init__(parent)
         self.setupUi(self)
@@ -374,7 +431,11 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
         for nome in lista_nomes:
             idx = feature.fieldNameIndex(nome)
             if idx != -1:
-                return feature[nome]
+                valor = feature[nome]
+                val_str = str(valor).strip().upper()
+
+                if valor is not None and val_str not in ["", "NULL", "NONE"]:
+                    return valor
         return None
         
     def executar_cruzamento(self):
@@ -441,13 +502,21 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                     protocolo = self.buscar_valor_campo(outorga, ["nr_e_protocolo", "PROTOCOLO"])
                     requerente = self.buscar_valor_campo(outorga, ["nm_requerente", "RAZAOSOCIAL"])
                     finalidade = self.buscar_valor_campo(outorga, ["desc_finalidades", "FINALIDADES"])
+                    vazao_diluicao = self.buscar_valor_campo(outorga, ["vlr_vazao_diluicao_jan"])
 
-                    vazao_raw = self.buscar_valor_campo(outorga, ["vlr_vazao_capt_lanc_jan", "VAZAO_OUTORGADA_M3_H"])
-                    try:
-                        vazao_str = str(vazao_raw).replace(",", ".").strip() if vazao_raw is not None else "0"
-                        vazao = float(vazao_str)
-                    except (ValueError, TypeError):
-                        vazao = 0.0
+                    if vazao_diluicao is not None and float(vazao_diluicao) > 0:
+                        try:
+                            vazao_str = str(vazao_diluicao).replace(",", ".").strip()
+                            vazao = float(vazao_str)
+                        except (ValueError, TypeError):
+                            vazao = 0.0
+                    else:
+                        vazao_raw = self.buscar_valor_campo(outorga, ["vlr_vazao_capt_lanc_jan", "VAZAO_OUTORGADA_M3_H"])
+                        try:
+                            vazao_str = str(vazao_raw).replace(",", ".").strip() if vazao_raw is not None else "0"
+                            vazao = float(vazao_str)
+                        except (ValueError, TypeError):
+                            vazao = 0.0
                     
                     vaz_tot += vazao
                     if portaria is not None and portaria != "":
@@ -467,9 +536,12 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                     self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(str(finalidade)))
                     self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vazao)+" m³/h"))
                     linha += 1
+
         self.tabela_resMont.insertRow(linha)
         self.tabela_resMont.setItem(linha, 0, QTableWidgetItem("Vazão Total"))
         self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vaz_tot)+" m³/h"))
+
+        self.calculo_concluido.emit(vaz_tot)
 
     def copiar_resultados(self):
         num_linhas = self.tabela_resMont.rowCount()
