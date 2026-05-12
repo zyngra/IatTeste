@@ -394,7 +394,7 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
 
         crs_bacia = self.layer_bacia.crs()
 
-        nome_camada = f"Montante_{self.cod_rio}_{self.cod_bac}_{self.nome_rio}"
+        nome_camada = f"Montante_{self.cod_rio}_{self.cod_bac}_{self.nome_rio}".strip().replace(" ", "_")
         camada_montante = QgsVectorLayer("Polygon", nome_camada, "memory")
         camada_montante.setCrs(crs_bacia)
 
@@ -444,8 +444,9 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
 
                     vazao_raw = self.buscar_valor_campo(outorga, ["vlr_vazao_capt_lanc_jan", "VAZAO_OUTORGADA_M3_H"])
                     try:
-                        vazao = float(vazao_raw) if vazao_raw is not None and str(vazao_raw).strip() != "" else 0.0
-                    except ValueError:
+                        vazao_str = str(vazao_raw).replace(",", ".").strip() if vazao_raw is not None else "0"
+                        vazao = float(vazao_str)
+                    except (ValueError, TypeError):
                         vazao = 0.0
                     
                     vaz_tot += vazao

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>702</width>
+    <width>826</width>
     <height>449</height>
    </rect>
   </property>
@@ -76,14 +76,63 @@
         <string>Análise de Montante (experimental)</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
-        <item row="16" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Área a montante do rio selecionado</string>
+        <item row="10" column="4">
+         <widget class="QSpinBox" name="sel_area_prop">
+          <property name="suffix">
+           <string>%</string>
+          </property>
+          <property name="minimum">
+           <number>0</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="value">
+           <number>100</number>
           </property>
          </widget>
         </item>
-        <item row="17" column="1" colspan="2">
+        <item row="16" column="1" colspan="2">
+         <widget class="QLineEdit" name="disp_amont">
+          <property name="inputMask">
+           <string/>
+          </property>
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="16" column="3">
+         <widget class="QLabel" name="label_11">
+          <property name="text">
+           <string>Qoutorgada (análise de montante)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="4">
+         <widget class="QLineEdit" name="disp_cod_bac">
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="4">
+         <widget class="QLineEdit" name="disp_qoutorgavel">
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="1" colspan="2">
          <widget class="QLineEdit" name="disp_q95">
           <property name="text">
            <string/>
@@ -93,6 +142,74 @@
           </property>
           <property name="readOnly">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="4" column="1" colspan="2">
+         <widget class="QLabel" name="label_9">
+          <property name="text">
+           <string>Código da bacia</string>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="1">
+         <widget class="QLabel" name="label_8">
+          <property name="text">
+           <string>Ottocódigo do curso</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Porcentagem outorgável</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1" colspan="3">
+         <widget class="QgsMapLayerComboBox" name="sel_camada_rio"/>
+        </item>
+        <item row="3" column="4">
+         <widget class="QLineEdit" name="disp_cod_rio">
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="10" column="3">
+         <widget class="QLabel" name="label_12">
+          <property name="text">
+           <string>Área proporcional</string>
+          </property>
+         </widget>
+        </item>
+        <item row="9" column="1" colspan="4">
+         <widget class="QgsMapLayerComboBox" name="sel_camada_ottobacias"/>
+        </item>
+        <item row="16" column="4">
+         <widget class="QLineEdit" name="disp_vout">
+          <property name="dragEnabled">
+           <bool>true</bool>
+          </property>
+          <property name="readOnly">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="18" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Vazão Q95 (mínima)</string>
+          </property>
+         </widget>
+        </item>
+        <item row="13" column="1">
+         <widget class="QRadioButton" name="radioBtn_80">
+          <property name="text">
+           <string>80%</string>
           </property>
          </widget>
         </item>
@@ -109,72 +226,24 @@
           </property>
          </widget>
         </item>
-        <item row="17" column="0">
-         <widget class="QLabel" name="label_5">
+        <item row="10" column="0">
+         <widget class="QLabel" name="label_1">
           <property name="text">
-           <string>Vazão Q95 (mínima)</string>
+           <string>Qespecífica</string>
           </property>
          </widget>
         </item>
-        <item row="17" column="3">
-         <widget class="QLabel" name="label_11">
+        <item row="16" column="0">
+         <widget class="QLabel" name="label_2">
           <property name="text">
-           <string>Placeholder</string>
+           <string>Área a montante do rio selecionado</string>
           </property>
          </widget>
         </item>
-        <item row="18" column="0" colspan="5">
+        <item row="19" column="0" colspan="5">
          <widget class="QPushButton" name="btn_exec_mont">
           <property name="text">
            <string>Executar análise de montante</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="4">
-         <widget class="QLineEdit" name="disp_cod_bac">
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="14" column="1">
-         <widget class="QRadioButton" name="radioBtn_100">
-          <property name="text">
-           <string>100%</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="0">
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Porcentagem outorgável</string>
-          </property>
-         </widget>
-        </item>
-        <item row="16" column="3">
-         <widget class="QLabel" name="label_10">
-          <property name="text">
-           <string>Qoutorgável</string>
-          </property>
-         </widget>
-        </item>
-        <item row="13" column="1">
-         <widget class="QRadioButton" name="radioBtn_80">
-          <property name="text">
-           <string>80%</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="4">
-         <widget class="QLineEdit" name="disp_cod_rio">
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
           </property>
          </widget>
         </item>
@@ -185,8 +254,12 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="1" colspan="3">
-         <widget class="QgsMapLayerComboBox" name="sel_camada_rio"/>
+        <item row="14" column="1">
+         <widget class="QRadioButton" name="radioBtn_100">
+          <property name="text">
+           <string>100%</string>
+          </property>
+         </widget>
         </item>
         <item row="2" column="4">
          <widget class="QLineEdit" name="disp_nome_rio">
@@ -198,26 +271,17 @@
           </property>
          </widget>
         </item>
-        <item row="10" column="0">
-         <widget class="QLabel" name="label_1">
+        <item row="18" column="3">
+         <widget class="QLabel" name="label_10">
           <property name="text">
-           <string>Qespecífica</string>
+           <string>Qoutorgável</string>
           </property>
          </widget>
         </item>
-        <item row="9" column="1" colspan="4">
-         <widget class="QgsMapLayerComboBox" name="sel_camada_ottobacias"/>
-        </item>
-        <item row="16" column="1" colspan="2">
-         <widget class="QLineEdit" name="disp_amont">
-          <property name="inputMask">
-           <string/>
-          </property>
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
+        <item row="2" column="1" colspan="2">
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Nome (se houver)</string>
           </property>
          </widget>
         </item>
@@ -225,13 +289,6 @@
          <widget class="QLabel" name="label_3">
           <property name="text">
            <string>Camada de rios</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="label_8">
-          <property name="text">
-           <string>Ottocódigo do curso</string>
           </property>
          </widget>
         </item>
@@ -259,60 +316,13 @@
           </property>
          </widget>
         </item>
-        <item row="16" column="4">
-         <widget class="QLineEdit" name="disp_qoutorgavel">
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
+        <item row="12" column="4" rowspan="3">
+         <widget class="QTextEdit" name="textEdit">
           <property name="readOnly">
            <bool>true</bool>
           </property>
-         </widget>
-        </item>
-        <item row="17" column="4">
-         <widget class="QLineEdit" name="lineEdit_2">
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="readOnly">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1" colspan="2">
-         <widget class="QLabel" name="label_9">
-          <property name="text">
-           <string>Código da bacia</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1" colspan="2">
-         <widget class="QLabel" name="label_7">
-          <property name="text">
-           <string>Nome (se houver)</string>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="4">
-         <widget class="QSpinBox" name="sel_area_prop">
-          <property name="suffix">
-           <string>%</string>
-          </property>
-          <property name="minimum">
-           <number>0</number>
-          </property>
-          <property name="maximum">
-           <number>100</number>
-          </property>
-          <property name="value">
-           <number>100</number>
-          </property>
-         </widget>
-        </item>
-        <item row="10" column="3">
-         <widget class="QLabel" name="label_12">
-          <property name="text">
-           <string>Área proporcional</string>
+          <property name="placeholderText">
+           <string>Memorial de cálculo (realizar análise de montante antes)</string>
           </property>
          </widget>
         </item>
