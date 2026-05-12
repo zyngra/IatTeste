@@ -461,9 +461,9 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
                         case True:
                             self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(str_portaria))
                         case False:
-                            self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(protocolo))
-                    self.tabela_resMont.setItem(linha, 1, QTableWidgetItem(requerente))
-                    self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(finalidade))
+                            self.tabela_resMont.setItem(linha, 0, QTableWidgetItem(str(protocolo)))
+                    self.tabela_resMont.setItem(linha, 1, QTableWidgetItem(str(requerente)))
+                    self.tabela_resMont.setItem(linha, 2, QTableWidgetItem(str(finalidade)))
                     self.tabela_resMont.setItem(linha, 3, QTableWidgetItem(str(vazao)+" m³/h"))
                     linha += 1
         self.tabela_resMont.insertRow(linha)
