@@ -304,7 +304,8 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.disp_qoutorgavel.setText("0 m³/h")
             return
         try:
-
+            
+            self.pct_aprop = self.sel_area_prop.value() / 100
             amont = self.amont_atual
             acont = self.acont_atual
             self.porc_out = 0
@@ -316,10 +317,19 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             else:
                 self.porc_out = 0.5
 
-            self.aprop = (amont - acont) + (acont * (self.sel_area_prop.value() / 100))
+            self.aprop = (amont - acont) + (acont * (self.pct_aprop))
             self.val_q95 = round(self.aprop * self.sel_qesp.value() * 3.6, 2)
 
             self.val_qoutorgavel = round(self.val_q95 * self.porc_out, 2)
+
+            self.saldo_q = self.val_qoutorgavel - getattr(self, 'vazao_outorgada', 0.0)
+            if hasattr(self, 'disp_qdisponivel'):
+                self.disp_qdisponivel.setText(f"{self.saldo_q:.2f} m³/h")
+
+                if self.saldo_q < 0:
+                    self.disp_qdisponivel.setStyleSheet("color: red; font-weight: bold;")
+                else:
+                    self.disp_qdisponivel.setStyleSheet("color: darkgreen; font-weight: bold;")
 
             self.disp_amont.setText(str(round(self.aprop, 2))+" km²")
             self.disp_q95.setText(str(self.val_q95)+" m³/h")
@@ -371,8 +381,15 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         texto_memorial = ( 
             f"Memorial descritivo de análise de montante\n\n"
-            f"Corpo hídrico: {self.disp_nome_rio.text()}\n"
-            f"Área de montante: {self.aprop:.2f} km²\n"
+            f"Corpo hídrico: {self.disp_nome_rio.text()}\n")
+        if self.pct_aprop != 1:
+            texto_memorial += (f"Área de montante: {self.amont_atual:.2f} km²\n"
+                f"Para este caso foi adotado uma área proporcional da bacia de contribuição.\n"
+                f"O percentual adotado foi de {self.pct_aprop*100:.0f}% da área de contribuição do trecho analisado, resultando em uma área proporcional de {self.aprop:.2f} km².\n"
+            )
+        else:
+            texto_memorial += (f"Área de montante: {self.aprop:.2f} km²\n")
+        texto_memorial += (
             f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
             f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n"
             f"Vazão Outorgada a Montante: {vazao_montante:.2f} m³/h\n"
@@ -387,7 +404,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         else:
             texto_memorial += "\n\nObservação: A vazão outorgada a montante é inferior à vazão outorgável calculada, indicando que há disponibilidade hídrica para novas outorgas nesse cenário."
 
-        texto_memorial += "\n\nEste memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.\n\nO técnico deverá conferir as informações contra a análise integrada quando possível."
+        texto_memorial += "\n\nEste memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.\n\nO técnico deverá conferir as informações contra a análise conjunta quando possível."
 
         popup = QtWidgets.QDialog(self)
         popup.setWindowTitle("Memorial Descritivo")
