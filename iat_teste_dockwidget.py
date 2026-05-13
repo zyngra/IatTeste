@@ -287,6 +287,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         acont = str(feature["nuareacont"])
         amont = str(feature["nuareamont"])
 
+        self.display_codigo_rio = codigo_rio
         iface.mapCanvas().unsetMapTool(self.ferramenta_selecao_rio)
 
         self.disp_nome_rio.setText(nome_rio)
@@ -381,7 +382,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         texto_memorial = ( 
             f"Memorial descritivo de análise de montante\n\n"
-            f"Corpo hídrico: {self.disp_nome_rio.text()}\n")
+            f"Corpo hídrico: {self.disp_nome_rio.text()}\n\n")
         if self.pct_aprop != 1:
             texto_memorial += (f"Área de montante: {self.amont_atual:.2f} km²\n"
                 f"Para este caso foi adotado uma área proporcional da bacia de contribuição.\n"
@@ -391,6 +392,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             texto_memorial += (f"Área de montante: {self.aprop:.2f} km²\n")
         texto_memorial += (
             f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
+            f"De acordo com a legislação e atos administrativos vigentes, a vazão outorgável no trecho analisado ({self.display_codigo_rio}) corresponde a {self.porc_out*100:.0f}% da vazão de referência\n"
             f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n"
             f"Vazão Outorgada a Montante: {vazao_montante:.2f} m³/h\n"
             f"Vazão Disponível e Outorgável: {self.saldo_q:.2f} m³/h\n\n"
