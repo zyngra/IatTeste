@@ -287,6 +287,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         acont = str(feature["nuareacont"])
         amont = str(feature["nuareamont"])
 
+        self.display_nome_rio = nome_rio
         self.display_codigo_rio = codigo_rio
         iface.mapCanvas().unsetMapTool(self.ferramenta_selecao_rio)
 
@@ -380,22 +381,27 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.saldo_q = self.val_qoutorgavel - vazao_montante
 
+        if not self.display_nome_rio:
+            memorial_nome_rio = "Corpo hídrico sem denominação na base"
+        else:
+            memorial_nome_rio = self.display_nome_rio
         texto_memorial = ( 
             f"Memorial descritivo de análise de montante\n\n"
-            f"Corpo hídrico: {self.disp_nome_rio.text()}\n\n")
+            f"Corpo hídrico: {memorial_nome_rio}\n\n")
         if self.pct_aprop != 1:
             texto_memorial += (f"Área de montante: {self.amont_atual:.2f} km²\n"
                 f"Para este caso foi adotado uma área proporcional da bacia de contribuição.\n"
-                f"O percentual adotado foi de {self.pct_aprop*100:.0f}% da área de contribuição do trecho analisado, resultando em uma área proporcional de {self.aprop:.2f} km².\n"
+                f"O percentual adotado foi de {self.pct_aprop*100:.0f}% da área de contribuição do trecho analisado, resultando em uma área proporcional de {self.aprop:.2f} km².\n\n"
             )
         else:
-            texto_memorial += (f"Área de montante: {self.aprop:.2f} km²\n")
+            texto_memorial += (f"Área de montante: {self.aprop:.2f} km²\n\n")
         texto_memorial += (
+            f"Vazão específica adotada: {self.sel_qesp.value():.2f} L/s/km²\n"
             f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
             f"De acordo com a legislação e atos administrativos vigentes, a vazão outorgável no trecho analisado ({self.display_codigo_rio}) corresponde a {self.porc_out*100:.0f}% da vazão de referência\n"
-            f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n"
+            f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n\n"
             f"Vazão Outorgada a Montante: {vazao_montante:.2f} m³/h\n"
-            f"Vazão Disponível e Outorgável: {self.saldo_q:.2f} m³/h\n\n"
+            f"Vazão Disponível e Outorgável: {self.saldo_q:.2f} m³/h\n\n\n"
             f"Q95 = {self.aprop:.2f} km² * {self.sel_qesp.value():.2f} L/s/km² * 3.6 = {self.val_q95:.2f} m³/h\n"
             f"Qoutorgável = {self.val_q95:.2f} m³/h * {self.porc_out*100:.0f}% = {self.val_qoutorgavel:.2f} m³/h\n"
             f"Qdisponível = {self.val_qoutorgavel:.2f} m³/h - {vazao_montante:.2f} m³/h = {self.saldo_q:.2f} m³/h"
