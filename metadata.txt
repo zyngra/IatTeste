@@ -6,7 +6,7 @@
 name=IatTeste
 qgisMinimumVersion=3.0
 description=Este plugin serve para facilitar o workflow das análises no âmbito do Instituto.
-version=v2.2.0a
+version=v2.2.1a
 author=Pedro Romanzini, IAT
 email=est.pedromoraes@iat.pr.gov.br
 
