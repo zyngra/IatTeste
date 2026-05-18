@@ -209,24 +209,29 @@ class IatTeste:
     #--------------------------------------------------------------------------
 
     def run(self):
-        """Run method that loads and starts the plugin"""
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
-            #print "** STARTING IatTeste"
-
-            # dockwidget may not exist if:
-            #    first run of plugin
-            #    removed on close (see self.onClosePlugin method)
+            # Cria a janela se não existir
             if self.dockwidget == None:
-                # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = IatTesteDockWidget()
 
-            # connect to provide cleanup on closing of dockwidget
+            # Conecta o sinal de fechamento
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
 
-            # show the dockwidget
-            # TODO: fix to allow choice of dock location
+            # Dá o nome para a janela (o texto da aba)
+            self.dockwidget.setWindowTitle("Análise Hídrica - IAT")
+
+            from qgis.PyQt.QtWidgets import QDockWidget
+            from qgis.PyQt.QtCore import Qt
+            
             self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
+
+            painel_camadas = self.iface.mainWindow().findChild(QDockWidget, "Layers")
+
+            if painel_camadas:
+                self.iface.mainWindow().tabifyDockWidget(painel_camadas, self.dockwidget)
+
             self.dockwidget.show()
+            self.dockwidget.raise_()

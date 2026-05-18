@@ -74,7 +74,8 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.btn_exec_mont.clicked.connect(lambda: self.analise_montante(self.disp_cod_rio.text(), self.disp_cod_bac.text()))
 
         self.vazao_outorgada = 0.0
-        self.btn_ger_memcalc.clicked.connect(lambda: self.gerar_memorial(self.vazao_outorgada))
+        self.vazao_a_descontar = 0.0
+        self.btn_ger_memcalc.clicked.connect(lambda: self.gerar_memorial(self.vazao_a_descontar))
 
         # Configurações da tabela de resultados
         self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -83,8 +84,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tabela.setColumnHidden(0, True)
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
+
+        # Toggles de atualização de cálculos
         self.amont_atual = 0.0
         self.acont_atual = 0.0
+        self.sel_ja_out_man.toggled.connect(self.alternar_modo_manual)
+        self.disp_ja_out.textChanged.connect(self.atualizar_calculos)
         self.sel_qesp.valueChanged.connect(self.atualizar_calculos)
         self.sel_area_prop.valueChanged.connect(self.atualizar_calculos)
         self.radioBtn_100.toggled.connect(self.atualizar_calculos)
@@ -300,7 +305,18 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.atualizar_calculos()
 
-    def atualizar_calculos(self):
+    def alternar_modo_manual(self, manual_ativo):
+        self.disp_ja_out.setReadOnly(not manual_ativo)
+
+        if manual_ativo:
+            self.disp_ja_out.setText("")
+            self.disp_ja_out.setPlaceholderText("Insira o valor da vazão indisponível")
+        else:
+            self.disp_ja_out.setText(f"{getattr(self, 'vazao_outorgada', 0.0):.2f} m³/h")
+
+        self.atualizar_calculos()
+
+    def atualizar_calculos(self, *args):
         if getattr(self, 'amont_atual', 0.0) == 0.0 or getattr(self, 'acont_atual', 0.0) == 0.0:
             self.disp_q95.setText("0 m³/h")
             self.disp_qoutorgavel.setText("0 m³/h")
@@ -324,7 +340,21 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             self.val_qoutorgavel = round(self.val_q95 * self.porc_out, 2)
 
-            self.saldo_q = self.val_qoutorgavel - getattr(self, 'vazao_outorgada', 0.0)
+            if self.sel_ja_out_man.isChecked():
+                texto = self.disp_ja_out.text().replace("m³/h", "").replace(",", ".").strip()
+
+                if not texto:
+                    self.vazao_a_descontar = 0.0
+                else:
+                    try:
+                        self.vazao_a_descontar = round(float(texto), 2)
+                    except ValueError:
+                        self.vazao_a_descontar = 0.0
+            else:
+                self.vazao_a_descontar = getattr(self, 'vazao_outorgada', 0.0)
+
+            self.saldo_q = self.val_qoutorgavel - self.vazao_a_descontar
+
             if hasattr(self, 'disp_qdisponivel'):
                 self.disp_qdisponivel.setText(f"{self.saldo_q:.2f} m³/h")
 
@@ -368,51 +398,60 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def receber_vazao_montante(self, vazao):
         self.vazao_outorgada = vazao
-        self.disp_ja_out.setText(f"{vazao:.2f} m³/h")
-        self.saldo_q = getattr(self, 'val_qoutorgavel', 0.0) - vazao
+
+        if not self.sel_ja_out_man.isChecked():
+            self.disp_ja_out.setText(f"{vazao:.2f} m³/h")
+            self.saldo_q = getattr(self, 'val_qoutorgavel', 0.0) - vazao
 
         if hasattr(self, 'disp_qdisponivel'):
             self.disp_qdisponivel.setText(f"{self.saldo_q:.2f} m³/h")
 
+        self.atualizar_calculos()
+
     def gerar_memorial(self, vazao_montante):
         if getattr(self, 'val_qoutorgavel', 0.0) == 0.0:
-            QtWidgets.QMessageBox.warning(self, "Erro", "Selecione ao menos um corpo hídrico para gerar o memorial.")
+            QtWidgets.QMessageBox.warning(self, "Erro", "Por favor insira uma Qespecífica.")
             return
 
         self.saldo_q = self.val_qoutorgavel - vazao_montante
 
+        if self.sel_ja_out_man.isChecked():
+            origem_vazao = "A vazão indisponível foi informada manualmente pelo técnico. Ela pode não refletir a situação real do corpo hídrico."
+        else:
+            origem_vazao = "A vazão indisponível foi calculada automaticamente com base na análise de montante, considerando as outorgas existentes a montante do trecho analisado. Ela pode não refletir a situação real do corpo hídrico."
         if not self.display_nome_rio:
             memorial_nome_rio = "Corpo hídrico sem denominação na base"
         else:
             memorial_nome_rio = self.display_nome_rio
         texto_memorial = ( 
-            f"Memorial descritivo de análise de montante\n\n"
-            f"Corpo hídrico: {memorial_nome_rio}\n\n")
+            f"Memorial descritivo de análise de montante<br><br>"
+            f"<b>Corpo hídrico:</b> {memorial_nome_rio}<br><br>")
         if self.pct_aprop != 1:
-            texto_memorial += (f"Área de montante: {self.amont_atual:.2f} km²\n"
-                f"Para este caso foi adotado uma área proporcional da bacia de contribuição.\n"
-                f"O percentual adotado foi de {self.pct_aprop*100:.0f}% da área de contribuição do trecho analisado, resultando em uma área proporcional de {self.aprop:.2f} km².\n\n"
+            texto_memorial += (f"<b>Área de montante:</b> {self.amont_atual:.2f} km²<br>"
+                f"Para este caso foi adotado uma área proporcional da bacia de contribuição.<br>"
+                f"O percentual adotado foi de {self.pct_aprop*100:.0f}% da área de contribuição do trecho analisado, resultando em uma área proporcional de {self.aprop:.2f} km².<br><br>"
             )
         else:
-            texto_memorial += (f"Área de montante: {self.aprop:.2f} km²\n\n")
+            texto_memorial += (f"<b>Área de montante:</b> {self.aprop:.2f} km²<br><br>")
         texto_memorial += (
-            f"Vazão específica adotada: {self.sel_qesp.value():.2f} L/s/km²\n"
-            f"Vazão de Referência Q95: {self.val_q95:.2f} m³/h\n"
-            f"De acordo com a legislação e atos administrativos vigentes, a vazão outorgável no trecho analisado ({self.display_codigo_rio}) corresponde a {self.porc_out*100:.0f}% da vazão de referência\n"
-            f"Vazão Outorgável: {self.val_qoutorgavel:.2f} m³/h\n\n"
-            f"Vazão Outorgada a Montante: {vazao_montante:.2f} m³/h\n"
-            f"Vazão Disponível e Outorgável: {self.saldo_q:.2f} m³/h\n\n\n"
-            f"Q95 = {self.aprop:.2f} km² * {self.sel_qesp.value():.2f} L/s/km² * 3.6 = {self.val_q95:.2f} m³/h\n"
-            f"Qoutorgável = {self.val_q95:.2f} m³/h * {self.porc_out*100:.0f}% = {self.val_qoutorgavel:.2f} m³/h\n"
-            f"Qdisponível = {self.val_qoutorgavel:.2f} m³/h - {vazao_montante:.2f} m³/h = {self.saldo_q:.2f} m³/h"
+            f"<b>Vazão específica adotada:</b> {self.sel_qesp.value():.2f} L/s/km²<br>"
+            f"<b>Vazão de Referência Q95:</b> {self.val_q95:.2f} m³/h<br>"
+            f"De acordo com a legislação e atos administrativos vigentes, a vazão outorgável no trecho analisado ({self.display_codigo_rio}) corresponde a {self.porc_out*100:.0f}% da vazão de referência Q95.<br>"
+            f"<b>Vazão Outorgável:</b> {self.val_qoutorgavel:.2f} m³/h<br><br>"
+            f"<b>Vazão Outorgada a Montante:</b> {vazao_montante:.2f} m³/h<br>"
+            f"{origem_vazao}<br>"
+            f"<b>Vazão Disponível e Outorgável:</b> {self.saldo_q:.2f} m³/h<br><br>"
+            f"<b>Q95 = {self.aprop:.2f} km² * {self.sel_qesp.value():.2f} L/s/km² * 3.6 = {self.val_q95:.2f} m³/h</b><br>"
+            f"<b>Qoutorgável = {self.val_q95:.2f} m³/h * {self.porc_out*100:.0f}% = {self.val_qoutorgavel:.2f} m³/h</b><br>"
+            f"<b>Qdisponível = {self.val_qoutorgavel:.2f} m³/h - {vazao_montante:.2f} m³/h = {self.saldo_q:.2f} m³/h</b>"
             )
         
         if self.saldo_q < 0:
-            texto_memorial += "\n\nObservação: A vazão outorgada a montante excede a vazão outorgável calculada, indicando que não há disponibilidade hídrica para novas outorgas nesse cenário."
+            texto_memorial += "<br><br>Observação: A vazão outorgada a montante <b>excede</b> a vazão outorgável calculada, indicando que <b>não há disponibilidade hídrica</b> para novas outorgas nesse cenário."
         else:
-            texto_memorial += "\n\nObservação: A vazão outorgada a montante é inferior à vazão outorgável calculada, indicando que há disponibilidade hídrica para novas outorgas nesse cenário."
+            texto_memorial += "<br><br>Observação: A vazão outorgada a montante é <b>inferior</b> à vazão outorgável calculada, indicando que <b>há disponibilidade hídrica</b> para novas outorgas nesse cenário."
 
-        texto_memorial += "\n\nEste memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.\n\nO técnico deverá conferir as informações contra a análise conjunta quando possível."
+        texto_memorial += "<br><br>Este memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.<br><br>O técnico deverá conferir as informações contra a análise conjunta quando possível."
 
         popup = QtWidgets.QDialog(self)
         popup.setWindowTitle("Memorial Descritivo")
@@ -422,7 +461,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         caixa_texto = QtWidgets.QTextEdit(popup)
         caixa_texto.setReadOnly(True)
-        caixa_texto.setText(texto_memorial)
+        caixa_texto.setHtml(texto_memorial)
         layout.addWidget(caixa_texto)
 
         btn_fechar = QtWidgets.QPushButton("Fechar", popup)
