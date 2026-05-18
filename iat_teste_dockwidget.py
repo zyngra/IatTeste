@@ -96,6 +96,19 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.radioBtn_80.toggled.connect(self.atualizar_calculos)
         self.radioBtn_50.toggled.connect(self.atualizar_calculos)
 
+        self.sel_analisar_eflu.toggled.connect(self.alternar_modulo_dbo)
+        self.alternar_modulo_dbo(self.sel_analisar_eflu.isChecked())
+
+
+        self.DBOmist = 0.0
+        self.DQOmax = 0.0
+        self.Qdil = 0.0
+        self.sel_qout_DBO.valueChanged.connect(self.calcular_mistura_dbo)
+        self.sel_qeflu_DBO.valueChanged.connect(self.calcular_mistura_dbo)
+        self.sel_DBO_eflu_DBO.valueChanged.connect(self.calcular_mistura_dbo)
+        self.sel_lim_DBO.valueChanged.connect(self.calcular_mistura_dbo)
+        self.sel_imp_mont.toggled.connect(self.calcular_mistura_dbo)
+
         # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
         # self.filtrar_camadas_campo("nr_e_protocolo")
 
@@ -469,6 +482,43 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         layout.addWidget(btn_fechar)
 
         popup.exec_()
+
+    def alternar_modulo_dbo(self, ativo):
+        self.grupo_dbo.setEnabled(ativo)
+
+    def calcular_mistura_dbo(self):
+        self.DBOmist = 0.0
+        self.DQOmax = 0.0
+        self.Qdil = 0.0
+        qdisponivel = 0.0
+        dbolim = round(float(self.sel_lim_DBO.value()), 2)
+        qeflu = round(float(self.sel_qeflu_DBO.value()), 2)
+        dboeflu = round(float(self.sel_DBO_eflu_DBO.value()), 0)
+
+        self.sel_qout_DBO.setReadOnly(self.sel_imp_mont.isChecked())
+        self.sel_qout_DBO.setEnabled(not self.sel_imp_mont.isChecked())
+        if self.sel_imp_mont.isChecked():
+            try:
+                qdisponivel = self.saldo_q
+                self.sel_qout_DBO.setValue(round(float(qdisponivel),2))
+            except AttributeError:
+                qdisponivel = 0.0
+        else:
+            qdisponivel = round(float(self.sel_qout_DBO.value()),2)
+        
+        try:
+            self.DBOmist = ((qdisponivel * dbolim)+(qeflu * dboeflu))/(qdisponivel + qeflu)
+        except ZeroDivisionError:
+            self.DBOmist = 0.0
+        try:
+            self.Qdil = (qeflu*(dboeflu - dbolim))/(dbolim)
+        except ZeroDivisionError:
+            self.Qdil = 0.0
+        self.DQOmax = 3*dboeflu
+
+        self.disp_DQOmax.setText(f"{self.DQOmax:.0f} mg/L")
+        self.disp_DBOmist.setText(f"{self.DBOmist:.2f} mg/L")
+        self.disp_Qdil.setText(f"{self.Qdil:.2f} m³/h")
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
