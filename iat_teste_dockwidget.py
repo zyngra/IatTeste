@@ -99,7 +99,6 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.sel_analisar_eflu.toggled.connect(self.alternar_modulo_dbo)
         self.alternar_modulo_dbo(self.sel_analisar_eflu.isChecked())
 
-        self.DBOlim = 0.0
         self.DBOmist = 0.0
         self.DBOmax = 0.0
         self.Qdil = 0.0
@@ -465,17 +464,20 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             texto_memorial += "<br><br>Observação: A vazão outorgada a montante é <b>inferior</b> à vazão outorgável calculada, indicando que <b>há disponibilidade hídrica</b> para novas outorgas nesse cenário."
 
         if self.sel_analisar_eflu.isChecked():
-            texto_memorial += (f"<br><br>Esta análise foi realizada com lançamento de efluentes."
-                               f"<br>Considerados os seguintes parâmetros para o cálculo da vazão máxima de diluição (QA):"
-                               f"<br>DBO máxima do efluente = {self.DBOmax:.2f} mg/L;"
-                               f"<br>DBO limite para o corpo hídrico no ponto de lançamento = {self.DBOlim:.2f} mg/L;"
-                               f"<br>DBO de mistura = {self.DBOmist:.2f} mg/L;"
-                               f"<br>Vazão de lançamento = {self.sel_qeflu_DBO.value():.2f} m³/h;"
-                               f"<br>VAZÃO MÁXIMA PARA DILUIÇÃO = {self.Qdil:.2f} m³/h."
-                               f"<br><br>Observação: A análise de mistura e diluição é uma estimativa preliminar, considerando apenas a DBO como parâmetro de qualidade da água. Para uma análise mais completa, outros parâmetros físico-químicos e biológicos devem ser considerados, bem como as características específicas do corpo hídrico em questão."
+            texto_memorial += (f"<br><br><b>Esta análise foi realizada com lançamento de efluentes.</b>"
+                               f"<br>Considerados os seguintes parâmetros para o cálculo da <b>vazão máxima de diluição (QA)</b>:"
+                               f"<br><b>DBO máxima do efluente</b> = {self.DBOmax:.2f} mg/L;"
+                               f"<br><b>DQO máxima do efluente</b> = {self.DBOmax*3:.2f} mg/L;"
+                               f"<br><b>DBO limite para o corpo hídrico no ponto de lançamento</b> = {self.sel_lim_DBO.value():.2f} mg/L;"
+                               f"<br><b>DBO de mistura</b> = {self.DBOmist:.2f} mg/L;"
+                               f"<br><b>Vazão de lançamento</b> = {self.sel_qeflu_DBO.value():.2f} m³/h;"
+                               f"<br><b>VAZÃO MÁXIMA PARA DILUIÇÃO</b> = {self.Qdil:.2f} m³/h."
             )
+            if self.DBOmist <= 5:
+                texto_memorial += "<br><br><b>O valor de DBO de mistura calculado é inferior ou igual ao limite da classe do recurso hídrico, com a vazão de diluição podendo ser desconsiderada como indisponível para análises a jusante.</b>"
+            texto_memorial += f"<br><br>Observação: A análise de mistura e diluição é uma estimativa preliminar, considerando apenas a DBO como parâmetro de qualidade da água."
 
-        texto_memorial += "<br><br>Este memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.<br><br>O técnico deverá conferir as informações contra a análise conjunta quando possível."
+        texto_memorial += "<br>Este memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.<br><br>O técnico deverá conferir as informações contra a análise conjunta quando possível."
 
         popup = QtWidgets.QDialog(self)
         popup.setWindowTitle("Memorial Descritivo")
@@ -530,6 +532,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.disp_DQOmax.setText(f"{DQOmax:.0f} mg/L")
         self.disp_DBOmist.setText(f"{self.DBOmist:.2f} mg/L")
+        if self.DBOmist > 5:
+            self.disp_DBOmist.setStyleSheet("color: red; font-weight: bold;")
+        elif self.DBOmist == 5:
+            self.disp_DBOmist.setStyleSheet("color: orange; font-weight: bold;")
+        else:
+            self.disp_DBOmist.setStyleSheet("color: darkgreen; font-weight: bold;")
         self.disp_Qdil.setText(f"{self.Qdil:.2f} m³/h")
 
     def closeEvent(self, event):
