@@ -24,8 +24,8 @@
 
 import os
 
-from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry
-from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry, QgsSettings
+from qgis.PyQt import QtGui, QtWidgets, uic, QtCore
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.gui import QgsMapToolIdentifyFeature
@@ -107,6 +107,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.sel_DBO_eflu_DBO.valueChanged.connect(self.calcular_mistura_dbo)
         self.sel_lim_DBO.valueChanged.connect(self.calcular_mistura_dbo)
         self.sel_imp_mont.toggled.connect(self.calcular_mistura_dbo)
+
+        self.linhas_frases = []
+        self.configurar_aba_frases()
 
         # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
         # self.filtrar_camadas_campo("nr_e_protocolo")
@@ -422,10 +425,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def gerar_memorial(self, vazao_montante):
         if getattr(self, 'val_qoutorgavel', 0.0) == 0.0:
-            QtWidgets.QMessageBox.warning(self, "Erro", "Por favor insira uma Qespecífica.")
+            QtWidgets.QMessageBox.warning(self, "Erro", "Por favor escolha um corpo hídrico e uma Qespecífica.")
             return
 
         self.saldo_q = self.val_qoutorgavel - vazao_montante
+
+        frases_selecionadas = self.selecionar_frases()
 
         if self.sel_ja_out_man.isChecked():
             origem_vazao = "A vazão indisponível foi informada manualmente pelo técnico. Ela pode não refletir a situação real do corpo hídrico."
@@ -477,7 +482,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 texto_memorial += "<br><br><b>O valor de DBO de mistura calculado é inferior ou igual ao limite da classe do recurso hídrico, com a vazão de diluição podendo ser desconsiderada como indisponível para análises a jusante.</b>"
             texto_memorial += f"<br><br>Observação: A análise de mistura e diluição é uma estimativa preliminar, considerando apenas a DBO como parâmetro de qualidade da água."
 
-        texto_memorial += "<br>Este memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.<br><br>O técnico deverá conferir as informações contra a análise conjunta quando possível."
+        if frases_selecionadas:
+            texto_memorial += "<br><br><b>Observações adicionais selecionadas:</b>"
+            for frase in frases_selecionadas:
+                texto_memorial += f"<br><br>- {frase}"
+
+        texto_memorial += "<br><br>Este memorial foi gerado automaticamente, considerando os dados disponíveis na base de dados do Instituto.<br><br>O técnico deverá conferir as informações contra a análise conjunta quando possível."
 
         popup = QtWidgets.QDialog(self)
         popup.setWindowTitle("Memorial Descritivo")
@@ -495,6 +505,141 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         layout.addWidget(btn_fechar)
 
         popup.exec_()
+
+    def configurar_aba_frases(self):
+
+        self.layout_frases = self.scrollAreaWidgetContents.layout()
+        self.layout_frases.setAlignment(QtCore.Qt.AlignTop)
+
+        cabecalho = QtWidgets.QWidget()
+        cabecalho_layout = QtWidgets.QHBoxLayout(cabecalho)
+        cabecalho_layout.setContentsMargins(0, 0, 0, 5)
+        cabecalho_layout.setSpacing(5)
+
+        lbl_include = QtWidgets.QLabel("Incluir")
+        lbl_include.setFixedWidth(50)
+        lbl_include.setStyleSheet("font-weight: bold;")
+
+        lbl_frase = QtWidgets.QLabel("Frase para incluir no memorial")
+        lbl_frase.setStyleSheet("font-weight: bold;")
+
+        lbl_negrito = QtWidgets.QLabel("Negrito")
+        lbl_negrito.setFixedWidth(55)
+        lbl_negrito.setAlignment(QtCore.Qt.AlignCenter)
+        lbl_negrito.setStyleSheet("font-weight: bold;")
+
+        cabecalho_layout.addWidget(lbl_include)
+        cabecalho_layout.addWidget(lbl_frase)
+        cabecalho_layout.addWidget(lbl_negrito)
+
+        self.layout_frases.addWidget(cabecalho)
+        self.carregar_frases_salvas()
+
+    def carregar_frases_salvas(self):
+        config = QgsSettings()
+        frases_salvas = config.value("IatTeste/frases", [])
+
+        if isinstance(frases_salvas, str):
+            frases_salvas = [frases_salvas]
+        elif not isinstance(frases_salvas, list):
+            frases_salvas = []
+
+        if not frases_salvas:
+            self.adicionar_linha_frase()
+        else:
+            for frase in frases_salvas:
+                is_bold = "<b>" in frase
+
+                frase_limpa = frase.replace("<b>", "").replace("</b>", "")
+
+                self.adicionar_linha_frase(frase_limpa, is_bold)
+            self.adicionar_linha_frase()
+    
+    def adicionar_linha_frase(self, texto="", is_bold=False):
+        chk = QtWidgets.QCheckBox()
+        chk.setFixedWidth(50)
+
+        txt = QtWidgets.QLineEdit()
+        txt.setText(texto)
+        txt.setMinimumHeight(30)
+        txt.setPlaceholderText("Digite uma nova frase para o memorial...")
+        txt.setStyleSheet("padding: 4px; font-size: 13px;")
+
+        btn_negrito = QtWidgets.QPushButton("B")
+        btn_negrito.setCheckable(True)
+        btn_negrito.setChecked(is_bold)
+        btn_negrito.setFixedSize(55, 30)
+        btn_negrito.setToolTip("Formata a frase em negrito no memorial")
+        font_b = btn_negrito.font()
+        font_b.setBold(True)
+        btn_negrito.setFont(font_b)
+
+        row_widget = QtWidgets.QWidget()
+        row_layout = QtWidgets.QHBoxLayout()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(5)
+
+        row_layout.addWidget(chk)
+        row_layout.addWidget(txt)
+        row_layout.addWidget(btn_negrito)
+        row_widget.setLayout(row_layout)
+
+        self.layout_frases.addWidget(row_widget)
+
+        self.linhas_frases.append((chk, txt, btn_negrito, row_widget))
+
+        txt.textChanged.connect(self.dinamica_frases)
+        btn_negrito.clicked.connect(self.salvar_frases)
+
+    def dinamica_frases(self):
+        if not self.linhas_frases:
+            return
+        
+        _, ultima_txt, _, _ = self.linhas_frases[-1]
+
+        if ultima_txt.text().strip() != "":
+            self.adicionar_linha_frase()
+        
+        linhas_para_remover = []
+        for i in range(len(self.linhas_frases)-1):
+            chk, txt, btn_negrito, widget = self.linhas_frases[i]
+            if txt.text().strip() == "":
+                linhas_para_remover.append(i)
+
+        for i in reversed(linhas_para_remover):
+            chk, txt, btn_negrito, widget = self.linhas_frases.pop(i)
+            self.layout_frases.removeWidget(widget)
+            widget.deleteLater()
+
+        self.salvar_frases()
+
+    def salvar_frases(self):
+        config = QgsSettings()
+        lista_para_salvar = []
+
+        for chk, txt, btn_negrito, widget in self.linhas_frases:
+            texto = txt.text().strip()
+            if texto:
+                if btn_negrito.isChecked():
+                    texto = f"<b>{texto}</b>"
+
+                lista_para_salvar.append(texto)
+
+        config.setValue("IatTeste/frases", lista_para_salvar)
+
+    def selecionar_frases(self):
+        frases_selecionadas = []
+        for chk, txt, btn_negrito, widget in self.linhas_frases:
+            if chk.isChecked() and txt.text().strip() != "":
+                
+                frase_final = txt.text().strip()
+
+                if btn_negrito.isChecked():
+                    frase_final = f"<b>{frase_final}</b>"
+                
+                frases_selecionadas.append(frase_final)
+                
+        return frases_selecionadas
 
     def alternar_modulo_dbo(self, ativo):
         self.grupo_dbo.setEnabled(ativo)
