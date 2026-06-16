@@ -4,3 +4,4 @@ __pycache__/
 dadosteste/
 .vscode/
 ruff.toml
+settings.json
