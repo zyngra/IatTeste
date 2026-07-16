@@ -21,9 +21,13 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from .config import ConfigDialog
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 
@@ -50,11 +54,8 @@ class IatTeste:
         self.plugin_dir = os.path.dirname(__file__)
 
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'IatTeste_{}.qm'.format(locale))
+        locale = QSettings().value("locale/userLocale")[0:2]
+        locale_path = os.path.join(self.plugin_dir, "i18n", "IatTeste_{}.qm".format(locale))
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
@@ -63,16 +64,15 @@ class IatTeste:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&IatTeste')
+        self.menu = self.tr("&IatTeste")
         # TODO: We are going to let the user set this up in a future iteration
-        self.toolbar = self.iface.addToolBar(u'IatTeste')
-        self.toolbar.setObjectName(u'IatTeste')
+        self.toolbar = self.iface.addToolBar("IatTeste")
+        self.toolbar.setObjectName("IatTeste")
 
-        #print "** INITIALIZING IatTeste"
+        # print "** INITIALIZING IatTeste"
 
         self.pluginIsActive = False
         self.dockwidget = None
-
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -87,8 +87,7 @@ class IatTeste:
         :rtype: QString
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
-        return QCoreApplication.translate('IatTeste', message)
-
+        return QCoreApplication.translate("IatTeste", message)
 
     def add_action(
         self,
@@ -100,7 +99,8 @@ class IatTeste:
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
-        parent=None):
+        parent=None,
+    ):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -155,31 +155,33 @@ class IatTeste:
             self.toolbar.addAction(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
+            self.iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
 
         return action
 
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/iat_teste/icon.png'
+        icon_config = QgsApplication.getThemeIcon("/mActionOptions.svg")
+        icon_path = ":/plugins/iat_teste/icon.png"
         self.add_action(
-            icon_path,
-            text=self.tr(u''),
-            callback=self.run,
-            parent=self.iface.mainWindow())
+            icon_path, text=self.tr(""), callback=self.run, parent=self.iface.mainWindow()
+        )
+        self.add_action(
+            icon_config,
+            text=self.tr("Configurações"),
+            callback=self.show_config_dialog,
+            parent=self.iface.mainWindow(),
+        )
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
 
-        #print "** CLOSING IatTeste"
+        # print "** CLOSING IatTeste"
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
@@ -192,21 +194,22 @@ class IatTeste:
 
         self.pluginIsActive = False
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        #print "** UNLOAD IatTeste"
+        # print "** UNLOAD IatTeste"
 
         for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&IatTeste'),
-                action)
+            self.iface.removePluginMenu(self.tr("&IatTeste"), action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+
+    def show_config_dialog(self):
+        dialog = ConfigDialog(self.iface.mainWindow())
+        dialog.exec_()
 
     def run(self):
 
@@ -225,7 +228,7 @@ class IatTeste:
 
             from qgis.PyQt.QtWidgets import QDockWidget
             from qgis.PyQt.QtCore import Qt
-            
+
             self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
 
             painel_camadas = self.iface.mainWindow().findChild(QDockWidget, "Layers")

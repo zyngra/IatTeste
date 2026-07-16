@@ -17,8 +17,8 @@ jobs:
             - name: Injetar Oauth
               env:
                 SEGREDOS_OAUTH: ${{ secrets.CLIENT_SECRET_JSON}}
-                run: |
-                  echo "$SEGREDOS_OAUTH" > client_secret.json
+              run: |
+                echo "$SEGREDOS_OAUTH" > client_secret.json
 
             - name: Organizar a estrutura e criar zip
               run: |

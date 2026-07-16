@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>618</width>
-    <height>453</height>
+    <width>647</width>
+    <height>492</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,7 +18,7 @@
     <item row="2" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="tabPosition">
-       <enum>QTabWidget::South</enum>
+       <enum>QTabWidget::West</enum>
       </property>
       <property name="tabShape">
        <enum>QTabWidget::Rounded</enum>
@@ -44,6 +44,11 @@
       <property name="tabBarAutoHide">
        <bool>true</bool>
       </property>
+      <widget class="QWidget" name="tab_2">
+       <attribute name="title">
+        <string>Meus Protocolos</string>
+       </attribute>
+      </widget>
       <widget class="QWidget" name="tab_3">
        <attribute name="title">
         <string>Consulta Rápida</string>
@@ -117,7 +122,7 @@
       </widget>
       <widget class="QWidget" name="tab_4">
        <attribute name="title">
-        <string>Análise de Montante</string>
+        <string>Montante</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="19" column="0" colspan="5">
@@ -461,7 +466,7 @@
         <bool>true</bool>
        </property>
        <attribute name="title">
-        <string>Análise de Efluentes</string>
+        <string>Efluentes</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="1" column="0" colspan="2">
@@ -616,7 +621,7 @@
       </widget>
       <widget class="QWidget" name="tab_6">
        <attribute name="title">
-        <string>Frases Personalizadas</string>
+        <string>Frases</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_7">
         <item row="0" column="0">
@@ -629,8 +634,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>576</width>
-             <height>365</height>
+             <width>578</width>
+             <height>431</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout"/>

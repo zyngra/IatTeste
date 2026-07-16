@@ -30,6 +30,7 @@ from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView # type: ignore
 from qgis.PyQt.QtCore import pyqtSignal # type: ignore
 from qgis.gui import QgsMapToolIdentifyFeature # type: ignore
 from qgis.utils import iface # type: ignore
+from .integracao_sheets import GerenciaSheets
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'iat_teste_dockwidget_base.ui'))
@@ -106,6 +107,8 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.linhas_frases = []
         self.configurar_aba_frases()
 
+        self.btn_atualizar.clicked.connect(self.carregar_dados_google)
+
         # Lógica de filtrar camadas apenas para aquelas que contém o campo "nr_e_protocolo", que é o campo mais presente e utilizado para as análises. Assim, evitamos erros de camadas sem esse campo e facilitamos a vida do usuário.
         # self.filtrar_camadas_campo("nr_e_protocolo")
 
@@ -142,6 +145,105 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.filtrar_camadas_campo(self.sel_camada_ottobacias, ["shape_area"])
         except Exception as e:
             print(f"Erro ao atualizar filtros: {e}")
+
+    # Essa função carrega os dados das planilhas e dos usuários
+    def carregar_dados_google(self):
+        """Carrega os dados das planilhas e dos usuários via autenticação do Google."""
+        settings = QgsSettings()
+        id_planilha = settings.value("IatTeste/id_planilha", "")
+        nome_aba = settings.value("IatTeste/nome_aba", "")
+        coluna_status = settings.value("IatTeste/coluna_status", "")
+
+        if not id_planilha or not nome_aba or not coluna_status:
+            self.label_usuario.setText("Configure o ID da planilha, o nome da aba e a coluna de status nas configurações.")
+            return
+        
+        motor_google = GerenciaSheets(id_planilha)
+        nome, email = motor_google.obter_perfil_usuario()
+        self.label_usuario.setText(f"Usuário: {nome} | ({email})")
+
+        intervalo = f"{nome_aba}!A1:Z"
+        dados_planilha = motor_google.ler_dados(intervalo)
+
+        cabecalho = [col.lower() for col in dados_planilha[0]]
+
+        try:
+            idx_protocolo = cabecalho.index("PROTOCOLO")
+            idx_status = cabecalho.index(coluna_status)
+        except ValueError:
+            self.label_usuario.setText("Coluna de status não encontrada na planilha.")
+            return
+
+        letra_status = chr(65 + idx_status)
+
+        self.tabela_protocolos.setRowCount(0)
+        self.tabela_protocolos.setColumnCount(3)
+        self.tabela_protocolos.setHorizontalHeaderLabels(["Protocolo", "Nome", "Status"])
+        
+        header = self.tabela_protocolos.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+
+        camada = self.sel_camada.currentLayer()
+        if not camada:
+            self.tabela_protocolos.insertRow(0)
+            self.tabela_protocolos.setItem(0, 0, QTableWidgetItem("Nenhuma camada selecionada"))
+            return
+
+        coluna_para_sincronizar = []
+
+        campos_camada = [campo.name().lower for campo in camada.fields()]
+
+        if "nr_e_protocolo" not in campos_camada:
+            self.tabela_protocolos.insertRow(0)
+            self.tabela_protocolos.setItem(0, 0, QTableWidgetItem("Campo 'nr_e_protocolo' não encontrado na camada selecionada"))
+            return
+
+        linha_tabela = 0
+
+        for linha_planilha in dados_planilha[1:]:
+            protocolo_insanitizado = linha_planilha[0].strip() if len(linha_planilha) > 0 else ""
+
+            if not protocolo_insanitizado:
+                coluna_para_sincronizar.append([""])
+                continue
+            
+            protocolo_limpo = protocolo_insanitizado.replace(".", "").replace("-", "").replace("/", "")
+
+            expressao = f"\"nr_e_protocolo\" ILIKE '%{protocolo_limpo}%'"
+            request = QgsFeatureRequest().setFilterExpression(expressao)
+            features = list(camada.getFeatures(request))
+
+            status_qgis = "Não encontrado no banco de dados"
+
+            if features:
+                feicao = features[0]
+
+                status_qgis = str(feicao['nm_status_tramitacao'])
+                nome_req = str(feicao['nm_requerente'])
+        
+            self.tabela_protocolos.insertRow(linha_tabela)
+            self.tabela_protocolos.setItem(linha_tabela, 0, QTableWidgetItem(protocolo_insanitizado))
+            self.tabela_protocolos.setItem(linha_tabela, 1, QTableWidgetItem(nome_req))
+            self.tabela_protocolos.setItem(linha_tabela, 2, QTableWidgetItem(status_qgis))
+            linha_tabela += 1
+
+            coluna_para_sincronizar.append([status_qgis])
+        
+        self.tabela_protocolos.resizeColumnsToContents()
+
+        intervalo_escrita = f"{nome_aba}!{letra_status}2:{letra_status}"
+
+        try:
+            sucesso = motor_google.escrever_dados(intervalo_escrita, coluna_para_sincronizar)
+            if sucesso:
+                QtWidgets.QMessageBox.warning(self, "Sucesso", "Dados sincronizados com sucesso.")
+            else:
+                QtWidgets.QMessageBox.warning(self, "Erro", "Sincronização falhou.")
+        except Exception as e:
+            QtWidgets.QMessageBox.warning(self, "Erro", "Sincronização falhou.")
+            return
 
     # Componente principal do widget, onde ocorre a lógica de análise dos dados. Ele verifica se a camada selecionada é válida, constrói uma expressão de filtro com base no tipo de pesquisa escolhida e no valor digitado, e então executa a consulta na camada para obter os resultados correspondentes. Os resultados são exibidos em uma tabela, e o usuário pode clicar duas vezes em um resultado para dar zoom no ponto correspondente no mapa.
     def executar_analise(self):
