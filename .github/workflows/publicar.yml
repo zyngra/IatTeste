@@ -11,10 +11,16 @@ jobs:
             contents: read
             packages: write
         steps:
-            - name: 1. Puxar código
+            - name: Puxar código
               uses: actions/checkout@v4
 
-            - name: 2. Organizar a estrutura e criar zip
+            - name: Injetar Oauth
+              env:
+                SEGREDOS_OAUTH: ${{ secrets.CLIENT_SECRET_JSON}}
+                run: |
+                  echo "$SEGREDOS_OAUTH" > client_secret.json
+
+            - name: Organizar a estrutura e criar zip
               run: |
                 mkdir package_final
                 # Copia tudo para uma pasta IatTeste, ignorando arquivos de dev
@@ -22,7 +28,7 @@ jobs:
                 cd package_final
                 zip -r IatTeste.zip IatTeste/
             
-            - name: 3. Publicar
+            - name: Publicar
               uses: softprops/action-gh-release@v2
               with:
                 files: package_final/IatTeste.zip
