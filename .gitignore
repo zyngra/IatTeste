@@ -5,3 +5,5 @@ dadosteste/
 .vscode/
 ruff.toml
 settings.json
+client_secret.json
+token.json

@@ -24,12 +24,12 @@
 
 import os
 
-from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry, QgsSettings
-from qgis.PyQt import QtGui, QtWidgets, uic, QtCore
-from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.gui import QgsMapToolIdentifyFeature
-from qgis.utils import iface
+from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry, QgsSettings # type: ignore
+from qgis.PyQt import QtGui, QtWidgets, uic, QtCore # type: ignore
+from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView # type: ignore
+from qgis.PyQt.QtCore import pyqtSignal # type: ignore
+from qgis.gui import QgsMapToolIdentifyFeature # type: ignore
+from qgis.utils import iface # type: ignore
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'iat_teste_dockwidget_base.ui'))
@@ -45,11 +45,6 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(IatTesteDockWidget, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://doc.qt.io/qt-5/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
         # Não mexa em qualquer coisa acima deste ponto, a menos que saiba exatamente o que está fazendo!
