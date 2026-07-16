@@ -1,3 +1,12 @@
+import sys
+import os
+
+plugin_dir = os.path.dirname(__file__)
+libs_path = os.path.join(plugin_dir, "libs")
+
+if libs_path not in sys.path:
+    sys.path.insert(0, libs_path)
+
 # -*- coding: utf-8 -*-
 """
 /***************************************************************************
@@ -33,4 +42,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     """
     #
     from .iat_teste import IatTeste
+
     return IatTeste(iface)
