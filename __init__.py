@@ -29,7 +29,7 @@ import os
 
 
 def checar_e_instalar_dependencias():
-    """Verifica se o Google está instalado. Se não, acha o python correto e instala."""
+    """Verifica se o Google está instalado. Se não, instala offline usando os wheels locais."""
     try:
         import googleapiclient
         import google.auth
@@ -40,9 +40,8 @@ def checar_e_instalar_dependencias():
         aviso.setWindowTitle("IatTeste - Configuração Inicial")
         aviso.setText(
             "Bem-vindo(a)!\n\n"
-            "Parece que é a primeira vez que você roda este plugin.\n"
-            "Para acessar as planilhas, precisamos baixar as bibliotecas do Google.\n\n"
-            "Uma tela preta vai se abrir. POR FAVOR, AGUARDE ELA FECHAR SOZINHA."
+            "Configurando as bibliotecas do Google de forma offline...\n"
+            "Uma tela preta vai se abrir por alguns segundos. Aguarde fechar."
         )
         aviso.setIcon(QMessageBox.Information)
         aviso.exec_()
@@ -52,18 +51,24 @@ def checar_e_instalar_dependencias():
         else:
             python_exe = sys.executable
 
-        pacotes = ["google-api-python-client", "google-auth-httplib2", "google-auth-oauthlib"]
+        # Pega o caminho absoluto da pasta 'wheels' dentro do diretório do plugin
+        plugin_dir = os.path.dirname(__file__)
+        wheels_dir = os.path.join(plugin_dir, "wheels")
 
-        trusted_hosts = [
-            "--trusted-host",
-            "pypi.org",
-            "--trusted-host",
-            "pypi.python.org",
-            "--trusted-host",
-            "files.pythonhosted.org",
+        comando = [
+            python_exe,
+            "-m",
+            "pip",
+            "install",
+            "--no-index",
+            "--find-links",
+            wheels_dir,
+            "google-api-python-client",
+            "google-auth-httplib2",
+            "google-auth-oauthlib",
+            "cryptography",
+            "--user",
         ]
-
-        comando = [python_exe, "-m", "pip", "install"] + pacotes + ["--user"] + trusted_hosts
 
         try:
             if os.name == "nt":
@@ -75,12 +80,11 @@ def checar_e_instalar_dependencias():
             QMessageBox.information(
                 None,
                 "Instalação Concluída",
-                "Tudo pronto! As bibliotecas foram instaladas.\n\n"
-                "Por favor, REINICIE O QGIS para que as alterações façam efeito.",
+                "Tudo pronto! Dependências instaladas com sucesso.\n\n"
+                "Por favor, REINICIE O QGIS.",
             )
         except Exception as e:
-            QMessageBox.critical(None, "Erro", f"Falha ao tentar instalar: {e}")
-
+            QMessageBox.critical(None, "Erro", f"Falha na instalação offline: {e}")
 
 # Executa a checagem no exato momento em que o plugin é lido
 checar_e_instalar_dependencias()
