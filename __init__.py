@@ -28,12 +28,11 @@ import os
 """
 
 def checar_e_instalar_dependencias():
-    """Verifica se o Google está instalado. Se não, instala abrindo um terminal visível."""
+    """Verifica se o Google está instalado. Se não, acha o python correto e instala."""
     try:
         import googleapiclient
         import google.auth
     except ImportError:
-        # Só chamamos a interface gráfica do QGIS se der erro de importação
         from qgis.PyQt.QtWidgets import QMessageBox
         
         aviso = QMessageBox()
@@ -47,12 +46,18 @@ def checar_e_instalar_dependencias():
         aviso.setIcon(QMessageBox.Information)
         aviso.exec_()
 
+        if sys.platform == 'win32':
+            python_exe = os.path.join(sys.prefix, 'python.exe')
+        else:
+            python_exe = sys.executable
+            
         pacotes = [
             'google-api-python-client', 
             'google-auth-httplib2', 
             'google-auth-oauthlib'
         ]
-        comando = [sys.executable, '-m', 'pip', 'install'] + pacotes + ['--user']
+        
+        comando = [python_exe, '-m', 'pip', 'install'] + pacotes + ['--user']
 
         try:
             if os.name == 'nt':
@@ -61,7 +66,6 @@ def checar_e_instalar_dependencias():
             else:
                 subprocess.call(comando)
             
-            # Avisa que terminou
             QMessageBox.information(
                 None, 
                 "Instalação Concluída", 
@@ -71,6 +75,7 @@ def checar_e_instalar_dependencias():
         except Exception as e:
             QMessageBox.critical(None, "Erro", f"Falha ao tentar instalar: {e}")
 
+# Executa a checagem no exato momento em que o plugin é lido
 checar_e_instalar_dependencias()
 
 # noinspection PyPep8Naming
