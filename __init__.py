@@ -27,6 +27,7 @@ import os
  This script initializes the plugin, making it known to QGIS.
 """
 
+
 def checar_e_instalar_dependencias():
     """Verifica se o Google está instalado. Se não, acha o python correto e instala."""
     try:
@@ -34,7 +35,7 @@ def checar_e_instalar_dependencias():
         import google.auth
     except ImportError:
         from qgis.PyQt.QtWidgets import QMessageBox
-        
+
         aviso = QMessageBox()
         aviso.setWindowTitle("IatTeste - Configuração Inicial")
         aviso.setText(
@@ -46,37 +47,44 @@ def checar_e_instalar_dependencias():
         aviso.setIcon(QMessageBox.Information)
         aviso.exec_()
 
-        if sys.platform == 'win32':
-            python_exe = os.path.join(sys.prefix, 'python.exe')
+        if sys.platform == "win32":
+            python_exe = os.path.join(sys.prefix, "python.exe")
         else:
             python_exe = sys.executable
-            
-        pacotes = [
-            'google-api-python-client', 
-            'google-auth-httplib2', 
-            'google-auth-oauthlib'
+
+        pacotes = ["google-api-python-client", "google-auth-httplib2", "google-auth-oauthlib"]
+
+        trusted_hosts = [
+            "--trusted-host",
+            "pypi.org",
+            "--trusted-host",
+            "pypi.python.org",
+            "--trusted-host",
+            "files.pythonhosted.org",
         ]
-        
-        comando = [python_exe, '-m', 'pip', 'install'] + pacotes + ['--user']
+
+        comando = [python_exe, "-m", "pip", "install"] + pacotes + ["--user"] + trusted_hosts
 
         try:
-            if os.name == 'nt':
+            if os.name == "nt":
                 CREATE_NEW_CONSOLE = 0x00000010
                 subprocess.call(comando, creationflags=CREATE_NEW_CONSOLE)
             else:
                 subprocess.call(comando)
-            
+
             QMessageBox.information(
-                None, 
-                "Instalação Concluída", 
+                None,
+                "Instalação Concluída",
                 "Tudo pronto! As bibliotecas foram instaladas.\n\n"
-                "Por favor, REINICIE O QGIS para que as alterações façam efeito."
+                "Por favor, REINICIE O QGIS para que as alterações façam efeito.",
             )
         except Exception as e:
             QMessageBox.critical(None, "Erro", f"Falha ao tentar instalar: {e}")
 
+
 # Executa a checagem no exato momento em que o plugin é lido
 checar_e_instalar_dependencias()
+
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
