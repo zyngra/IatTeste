@@ -1,13 +1,8 @@
+# -*- coding: utf-8 -*-
 import sys
+import subprocess
 import os
 
-plugin_dir = os.path.dirname(__file__)
-libs_path = os.path.join(plugin_dir, "libs")
-
-if libs_path not in sys.path:
-    sys.path.insert(0, libs_path)
-
-# -*- coding: utf-8 -*-
 """
 /***************************************************************************
  IatTeste
@@ -32,6 +27,51 @@ if libs_path not in sys.path:
  This script initializes the plugin, making it known to QGIS.
 """
 
+def checar_e_instalar_dependencias():
+    """Verifica se o Google está instalado. Se não, instala abrindo um terminal visível."""
+    try:
+        import googleapiclient
+        import google.auth
+    except ImportError:
+        # Só chamamos a interface gráfica do QGIS se der erro de importação
+        from qgis.PyQt.QtWidgets import QMessageBox
+        
+        aviso = QMessageBox()
+        aviso.setWindowTitle("IatTeste - Configuração Inicial")
+        aviso.setText(
+            "Bem-vindo(a)!\n\n"
+            "Parece que é a primeira vez que você roda este plugin.\n"
+            "Para acessar as planilhas, precisamos baixar as bibliotecas do Google.\n\n"
+            "Uma tela preta vai se abrir. POR FAVOR, AGUARDE ELA FECHAR SOZINHA."
+        )
+        aviso.setIcon(QMessageBox.Information)
+        aviso.exec_()
+
+        pacotes = [
+            'google-api-python-client', 
+            'google-auth-httplib2', 
+            'google-auth-oauthlib'
+        ]
+        comando = [sys.executable, '-m', 'pip', 'install'] + pacotes + ['--user']
+
+        try:
+            if os.name == 'nt':
+                CREATE_NEW_CONSOLE = 0x00000010
+                subprocess.call(comando, creationflags=CREATE_NEW_CONSOLE)
+            else:
+                subprocess.call(comando)
+            
+            # Avisa que terminou
+            QMessageBox.information(
+                None, 
+                "Instalação Concluída", 
+                "Tudo pronto! As bibliotecas foram instaladas.\n\n"
+                "Por favor, REINICIE O QGIS para que as alterações façam efeito."
+            )
+        except Exception as e:
+            QMessageBox.critical(None, "Erro", f"Falha ao tentar instalar: {e}")
+
+checar_e_instalar_dependencias()
 
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
