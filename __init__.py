@@ -86,6 +86,7 @@ def checar_e_instalar_dependencias():
         except Exception as e:
             QMessageBox.critical(None, "Erro", f"Falha na instalação offline: {e}")
 
+
 # Executa a checagem no exato momento em que o plugin é lido
 checar_e_instalar_dependencias()
 
