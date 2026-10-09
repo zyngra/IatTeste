@@ -26,7 +26,6 @@ from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from .config import ConfigDialog
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -164,16 +163,9 @@ class IatTeste:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_config = QgsApplication.getThemeIcon("/mActionOptions.svg")
         icon_path = ":/plugins/iat_teste/icon.png"
         self.add_action(
             icon_path, text=self.tr(""), callback=self.run, parent=self.iface.mainWindow()
-        )
-        self.add_action(
-            icon_config,
-            text=self.tr("Configurações"),
-            callback=self.show_config_dialog,
-            parent=self.iface.mainWindow(),
         )
 
     # --------------------------------------------------------------------------
@@ -204,12 +196,6 @@ class IatTeste:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
-
-    # --------------------------------------------------------------------------
-
-    def show_config_dialog(self):
-        dialog = ConfigDialog(self.iface.mainWindow())
-        dialog.exec_()
 
     def run(self):
 
