@@ -14,7 +14,7 @@ __copyright__ = 'Copyright 2026, IAT'
 
 import unittest
 
-from qgis.PyQt.QtGui import QDockWidget
+from qgis.PyQt.QtWidgets import QDockWidget
 
 from iat_teste_dockwidget import IatTesteDockWidget
 

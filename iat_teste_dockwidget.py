@@ -24,7 +24,7 @@
 
 import os
 
-from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry, QgsSettings # type: ignore
+from qgis.core import QgsVectorLayer, QgsFeature, QgsSymbol, QgsSingleSymbolRenderer, QgsFeatureRequest, QgsMapLayerProxyModel, QgsMapLayerType, QgsProject, QgsGeometry, QgsSettings, Qgis # type: ignore
 from qgis.PyQt import QtGui, QtWidgets, uic, QtCore # type: ignore
 from qgis.PyQt.QtWidgets import QTableWidgetItem, QHeaderView # type: ignore
 from qgis.PyQt.QtCore import pyqtSignal # type: ignore
@@ -73,9 +73,9 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.btn_ger_memcalc.clicked.connect(lambda: self.gerar_memorial(self.vazao_a_descontar))
 
         # Configurações da tabela de resultados
-        self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        self.tabela.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tabela.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabela.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.SingleSelection)
+        self.tabela.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
         self.tabela.setColumnHidden(0, True)
         self.tabela.cellDoubleClicked.connect(self.zoom_pto)
 
@@ -203,11 +203,11 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.tabela.setHorizontalHeaderLabels(["ID", "CPF/CNPJ", "Protocolo", "Nome", "Portaria"])
 
         header = self.tabela.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.Interactive)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
 
         # Esconde a coluna de ID, que é utilizada apenas para lógica interna, e a camada de CPF/CNPJ se a base
         # de dados utilizada não a possuir.
@@ -283,14 +283,14 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         camada_rios = self.sel_camada_rio.currentLayer()
 
         if not camada_rios:
-            iface.messageBar().pushMessage("Erro", "Selecione uma camada de rios válida.", level=3)
+            iface.messageBar().pushMessage("Erro", "Selecione uma camada de rios válida.", level=Qgis.MessageLevel.Critical)
             return
         if camada_rios.type() != QgsMapLayerType.VectorLayer:
-            iface.messageBar().pushMessage("Erro", "A camada selecionada deve ser do tipo vetor.", level=3)
+            iface.messageBar().pushMessage("Erro", "A camada selecionada deve ser do tipo vetor.", level=Qgis.MessageLevel.Critical)
             return
         campos = camada_rios.fields()
         if campos.indexOf("cocursodag") == -1 or campos.indexOf("cobacia") == -1 or campos.indexOf("noriocomp") == -1:
-            iface.messageBar().pushMessage("Erro", "A camada selecionada deve conter os campos 'cocursodag', 'cobacia' e 'noriocomp'.", level=3)
+            iface.messageBar().pushMessage("Erro", "A camada selecionada deve conter os campos 'cocursodag', 'cobacia' e 'noriocomp'.", level=Qgis.MessageLevel.Critical)
             return
         
         self.ferramenta_selecao_rio = QgsMapToolIdentifyFeature(iface.mapCanvas(), camada_rios)
@@ -502,12 +502,12 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         btn_fechar.clicked.connect(popup.accept)
         layout.addWidget(btn_fechar)
 
-        popup.exec_()
+        popup.exec()
 
     def configurar_aba_frases(self):
 
         self.layout_frases = self.scrollAreaWidgetContents.layout()
-        self.layout_frases.setAlignment(QtCore.Qt.AlignTop)
+        self.layout_frases.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         cabecalho = QtWidgets.QWidget()
         cabecalho_layout = QtWidgets.QHBoxLayout(cabecalho)
@@ -523,7 +523,7 @@ class IatTesteDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         lbl_negrito = QtWidgets.QLabel("Negrito")
         lbl_negrito.setFixedWidth(55)
-        lbl_negrito.setAlignment(QtCore.Qt.AlignCenter)
+        lbl_negrito.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         lbl_negrito.setStyleSheet("font-weight: bold;")
 
         cabecalho_layout.addWidget(lbl_include)
@@ -700,8 +700,8 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
         self.cod_bac = cod_bac
         self.nome_rio = nome_rio
 
-        self.tabela_resMont.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
-        self.tabela_resMont.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.tabela_resMont.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tabela_resMont.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
 
         self.btn_exec.clicked.connect(self.executar_cruzamento)
         self.btn_cop.clicked.connect(self.copiar_resultados)
@@ -761,10 +761,10 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
         self.tabela_resMont.setHorizontalHeaderLabels(["Portaria/Protocolo", "Razão Social", "Finalidades", "Vazão Outorgada (m³/h)"])
 
         header = self.tabela_resMont.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
 
         linha = 0
         vaz_tot = 0.0
@@ -854,7 +854,7 @@ class DialogoMontante(QtWidgets.QDialog, DIALOG_CLASS):
             resultados_texto += "\t".join(valores_linha) + "\n"
 
         QtWidgets.QApplication.clipboard().setText(resultados_texto)
-        iface.messageBar().pushMessage("Sucesso", "Resultados copiados para a área de transferência.", level=0, duration=3)
+        iface.messageBar().pushMessage("Sucesso", "Resultados copiados para a área de transferência.", level=Qgis.MessageLevel.Success, duration=3)
 
     def closeEvent(self, event):
         event.accept()

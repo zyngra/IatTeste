@@ -25,7 +25,10 @@
 from qgis.core import QgsApplication
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+try:
+    from qgis.PyQt.QtGui import QAction
+except ImportError:
+    from qgis.PyQt.QtWidgets import QAction
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -215,7 +218,7 @@ class IatTeste:
             from qgis.PyQt.QtWidgets import QDockWidget
             from qgis.PyQt.QtCore import Qt
 
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
+            self.iface.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockwidget)
 
             painel_camadas = self.iface.mainWindow().findChild(QDockWidget, "Layers")
 
