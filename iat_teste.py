@@ -205,6 +205,8 @@ class IatTeste:
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
+            self.dockwidget.setMinimumSize(0,0)
+
             # Cria a janela se não existir
             if self.dockwidget == None:
                 self.dockwidget = IatTesteDockWidget()
